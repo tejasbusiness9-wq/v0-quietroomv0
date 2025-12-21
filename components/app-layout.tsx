@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { getLevelInfo } from "@/lib/leveling-system"
 
 const NavItem = memo(({ item, isActive, onClick }: any) => {
   const Icon = item.icon
@@ -48,6 +49,11 @@ NavItem.displayName = "NavItem"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [profile, setProfile] = useState<{
+    level: number
+    display_name: string | null
+    username: string | null
+  } | null>(null)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = getSupabaseBrowserClient()
@@ -62,12 +68,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("level, display_name, username")
+          .eq("user_id", user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) {
+              setProfile(data)
+            }
+          })
+      }
     })
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        supabase
+          .from("profiles")
+          .select("level, display_name, username")
+          .eq("user_id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) {
+              setProfile(data)
+            }
+          })
+      } else {
+        setProfile(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -145,21 +177,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     audioRef.current?.play().catch(() => {})
   }
 
-  const userLevel = 18
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player"
-  const userClass = "Arcane Builder"
+  const userLevel = profile?.level || 1
+  const userName =
+    profile?.display_name ||
+    profile?.username ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "Player"
+  const userClass = getLevelInfo(userLevel).name
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, path: "/" },
-    { id: "goals", label: "Goals", icon: Target, path: "/" },
-    { id: "tasks", label: "Tasks", icon: CheckSquare, path: "/" },
-    { id: "leaderboard", label: "Leaderboard", icon: Trophy, path: "/" },
-    { id: "zen-mode", label: "Zen Mode", icon: Zap, path: "/" },
+    { id: "goals", label: "Goals", icon: Target, path: "/goals" },
+    { id: "tasks", label: "Tasks", icon: CheckSquare, path: "/tasks" },
+    { id: "leaderboard", label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
+    { id: "zen-mode", label: "Zen Mode", icon: Zap, path: "/zen-mode" },
   ]
 
   const communityItems = [
     { id: "talk-to-q", label: "Talk to Q", icon: MessageSquare, path: "/talk-to-q" },
-    { id: "community", label: "Community", icon: Users, path: "/" },
+    { id: "community", label: "Community", icon: Users, path: "/community" },
   ]
 
   return (
@@ -311,7 +348,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 <button
                                   key={result.id}
                                   onClick={() => {
-                                    router.push("/")
+                                    router.push("/goals")
                                     setShowSearchResults(false)
                                     setSearchQuery("")
                                   }}

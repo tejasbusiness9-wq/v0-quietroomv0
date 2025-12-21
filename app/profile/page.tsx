@@ -89,7 +89,12 @@ export default function ProfilePage() {
   const levelInfo = getLevelInfo(level)
 
   const userData = {
-    name: user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player",
+    name:
+      profile?.display_name ||
+      profile?.username ||
+      user?.user_metadata?.full_name ||
+      user?.email?.split("@")[0] ||
+      "Player",
     email: user?.email || "",
     photoUrl: user?.user_metadata?.avatar_url || "/user-profile-illustration.png",
     joinDate: user?.created_at
