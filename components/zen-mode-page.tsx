@@ -1,6 +1,7 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Play } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
+import { Play, Volume2, VolumeX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,6 +19,21 @@ interface Task {
   id: string
   title: string
   goal_id: string | null
+}
+
+interface Environment {
+  id: string
+  name: string
+  description: string
+  background_value: string
+}
+
+interface Sound {
+  id: string
+  name: string
+  description: string
+  icon_name: string
+  file_url: string
 }
 
 interface ZenModePageProps {
@@ -44,11 +60,26 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60)
   const [showXPPreview, setShowXPPreview] = useState(false)
   const [xpPreviewAmount, setXpPreviewAmount] = useState(0)
+  const [environments, setEnvironments] = useState<Environment[]>([])
+  const [sounds, setSounds] = useState<Sound[]>([])
+  const [selectedEnvironment, setSelectedEnvironment] = useState<string | null>(null)
+  const [activeEnvironment, setActiveEnvironment] = useState<Environment | null>(null)
+  const [playingSounds, setPlayingSounds] = useState<Set<string>>(new Set())
+  const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map())
   const { toast } = useToast()
+  const [selectedSound, setSelectedSound] = useState<string | null>(null)
+  const portalRoot = document.getElementById("portal-root")
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
     fetchGoals()
     fetchTasks()
+    fetchEnvironments()
+    fetchSounds()
     if (taskId) {
       loadTask(taskId)
     }
@@ -107,6 +138,49 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
     }
   }
 
+  const fetchEnvironments = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const { data, error } = await supabase
+      .from("system_environments")
+      .select("*")
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      console.error("Error fetching environments:", error)
+      return
+    }
+
+    const mappedData = data.map((env) => ({
+      id: env.id,
+      name: env.name,
+      background_value: env.background_url,
+    }))
+    setEnvironments(mappedData)
+  }
+
+  useEffect(() => {
+    fetchEnvironments()
+  }, [])
+
+  const fetchSounds = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const { data, error } = await supabase
+      .from("system_sounds")
+      .select("id, name, description, icon_name, audio_url")
+      .order("created_at", { ascending: true })
+
+    if (!error && data) {
+      const mappedData = data.map((sound) => ({
+        ...sound,
+        file_url: sound.audio_url,
+      }))
+      setSounds(mappedData)
+      if (mappedData.length > 0 && !selectedSound) {
+        setSelectedSound(mappedData[0].id)
+      }
+    }
+  }
+
   useEffect(() => {
     let interval: NodeJS.Timeout
 
@@ -144,7 +218,7 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
 
     const { data: currentProfile } = await supabase
       .from("profiles")
-      .select("total_xp, current_xp, level, xp_to_next_level")
+      .select("total_xp, current_xp, level, xp_to_next_level, aura")
       .eq("user_id", user.id)
       .maybeSingle()
 
@@ -153,12 +227,16 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
       let newCurrentXP = currentProfile.current_xp + xpEarned
       let newLevel = currentProfile.level
       let newXPToNextLevel = currentProfile.xp_to_next_level
+      let levelsGained = 0
 
       while (newCurrentXP >= newXPToNextLevel) {
         newLevel += 1
+        levelsGained += 1
         newCurrentXP -= newXPToNextLevel
         newXPToNextLevel = Math.floor(150 * Math.pow(1.15, newLevel - 1))
       }
+
+      const newAura = currentProfile.aura + levelsGained * 50
 
       await supabase
         .from("profiles")
@@ -167,6 +245,7 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
           current_xp: newCurrentXP,
           level: newLevel,
           xp_to_next_level: newXPToNextLevel,
+          aura: newAura,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id)
@@ -299,165 +378,321 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
     setSessionStartTime(Date.now())
   }
 
+  const handleEnvironmentClick = (env: Environment) => {
+    if (selectedEnvironment === env.id) {
+      // Clicking the same environment deselects it
+      setSelectedEnvironment(null)
+      setActiveEnvironment(null)
+    } else {
+      // Clicking a different environment selects it
+      setSelectedEnvironment(env.id)
+      setActiveEnvironment(env)
+    }
+  }
+
+  const handleSoundClick = (sound: Sound) => {
+    const isPlaying = playingSounds.has(sound.id)
+
+    if (isPlaying) {
+      // Stop the sound
+      const audio = audioRefs.current.get(sound.id)
+      if (audio) {
+        audio.pause()
+        audio.currentTime = 0
+      }
+      setPlayingSounds((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(sound.id)
+        return newSet
+      })
+    } else {
+      // Play the sound
+      let audio = audioRefs.current.get(sound.id)
+      if (!audio) {
+        audio = new Audio(sound.file_url)
+        audio.loop = true
+        audioRefs.current.set(sound.id, audio)
+      }
+      audio.play()
+      setPlayingSounds((prev) => new Set(prev).add(sound.id))
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      audioRefs.current.forEach((audio) => {
+        audio.pause()
+        audio.currentTime = 0
+      })
+    }
+  }, [])
+
   return (
     <>
-      {isFullscreen && (
-        <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-purple-950 via-indigo-950 to-purple-900 flex items-center justify-center">
-          <div className="w-full max-w-4xl px-8">
-            <div className="flex flex-col items-center justify-center space-y-8">
-              <div className="relative w-96 h-96 flex items-center justify-center">
-                <svg className="absolute inset-0 w-full h-full -rotate-90">
-                  <circle
-                    cx="192"
-                    cy="192"
-                    r="170"
-                    fill="none"
-                    stroke="hsl(var(--muted))"
-                    strokeWidth="12"
-                    className="opacity-20"
-                  />
-                  <circle
-                    cx="192"
-                    cy="192"
-                    r="170"
-                    fill="none"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 170}`}
-                    strokeDashoffset={`${2 * Math.PI * 170 * (1 - timeLeft / (initialMinutes * 60))}`}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
+      {/* Regular zen mode UI */}
+      {!isFullscreen && (
+        <div className="min-h-screen p-8">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-2">Zen Mode</h2>
+              <p className="text-muted-foreground">Drop into distraction-free focus and route XP to your goals.</p>
+            </div>
 
-                <div className="text-center">
-                  <div className="text-9xl font-bold text-foreground tabular-nums">{formatTime(timeLeft)}</div>
-                  {selectedGoal !== "none" && goals.find((g) => g.id === selectedGoal) && (
-                    <p className="text-lg text-muted-foreground mt-6">
-                      → {goals.find((g) => g.id === selectedGoal)?.title}
-                    </p>
+            <Card
+              className={`relative p-8 border-purple-500/20 overflow-hidden ${
+                activeEnvironment ? "bg-black/40 backdrop-blur-md border-white/20" : "bg-card"
+              }`}
+              style={
+                activeEnvironment?.background_value
+                  ? {
+                      backgroundImage: `url(${activeEnvironment.background_value})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : undefined
+              }
+            >
+              {activeEnvironment && <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />}
+
+              <div className="relative z-10 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">
+                      Route XP to goal: <span className="text-xs">(Personal XP Only)</span>
+                    </label>
+                    <Select value={selectedGoal} onValueChange={setSelectedGoal}>
+                      <SelectTrigger className="bg-background/50 border-purple-500/30">
+                        <SelectValue placeholder="Select a goal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Goal (Personal XP Only)</SelectItem>
+                        {goals.map((goal) => (
+                          <SelectItem key={goal.id} value={goal.id}>
+                            {goal.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Select task:</label>
+                    <Select value={selectedTask} onValueChange={setSelectedTask}>
+                      <SelectTrigger className="bg-background/50 border-purple-500/30">
+                        <SelectValue placeholder="Select a task" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Task</SelectItem>
+                        {tasks.map((task) => (
+                          <SelectItem key={task.id} value={task.id}>
+                            {task.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="text-8xl font-bold text-foreground mb-6 tabular-nums">{formatTime(timeLeft)}</div>
+
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 border border-amber-500/30 rounded-full mb-8">
+                    <span className="text-amber-400">⚡</span>
+                    <span className="font-semibold text-amber-300">+{Math.floor(initialMinutes * 5)} XP</span>
+                  </div>
+
+                  {!isRunning ? (
+                    <Button
+                      size="lg"
+                      onClick={startFocus}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-8"
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      Start focus
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={handleGiveUp}
+                      className="px-8 border-red-500/50 hover:bg-red-500/10 hover:border-red-500 text-red-400 hover:text-red-300 bg-transparent"
+                    >
+                      Give Up
+                    </Button>
                   )}
                 </div>
+
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { minutes: 15, xp: 75 },
+                    { minutes: 25, xp: 125 },
+                    { minutes: 45, xp: 225 },
+                    { minutes: 60, xp: 300 },
+                  ].map(({ minutes, xp }) => (
+                    <Button
+                      key={minutes}
+                      variant="outline"
+                      onClick={() => {
+                        setInitialMinutes(minutes)
+                        setTimeLeft(minutes * 60)
+                        setShowXPPreview(true)
+                        setXpPreviewAmount(xp)
+                        setTimeout(() => setShowXPPreview(false), 2000)
+                      }}
+                      className="flex flex-col items-center gap-1 h-auto py-3 border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/10"
+                    >
+                      <span className="font-semibold text-foreground">{minutes} min</span>
+                      <span className="text-xs text-amber-400">{xp} XP</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-foreground">Environments</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {environments.map((env) => (
+                    <Card
+                      key={env.id}
+                      className={`cursor-pointer transition-all hover:border-purple-500/50 overflow-hidden ${
+                        selectedEnvironment === env.id
+                          ? "border-purple-500 ring-2 ring-purple-500/20"
+                          : "border-border/50"
+                      }`}
+                      onClick={() => handleEnvironmentClick(env)}
+                    >
+                      <div className="aspect-video relative overflow-hidden bg-muted">
+                        {env.background_value ? (
+                          <img
+                            src={env.background_value || "/placeholder.svg"}
+                            alt={env.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log("[v0] Failed to load image:", env.background_value)
+                              e.currentTarget.src = "/placeholder.svg?height=100&width=150"
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                            No preview
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-medium text-foreground text-center truncate">{env.name}</p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full">
-                <span className="text-3xl">⚡</span>
-                <span className="text-xl font-bold text-yellow-400">Earning {Math.floor(initialMinutes * 5)} XP</span>
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-foreground">Sounds</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {sounds.map((sound) => {
+                    const isPlaying = playingSounds.has(sound.id)
+                    return (
+                      <Card
+                        key={sound.id}
+                        className={`cursor-pointer transition-all hover:border-purple-500/50 ${
+                          isPlaying
+                            ? "border-purple-500 ring-2 ring-purple-500/20 bg-purple-500/10"
+                            : "border-border/50"
+                        }`}
+                        onClick={() => handleSoundClick(sound)}
+                      >
+                        <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-purple-950/40 to-indigo-950/40">
+                          {isPlaying ? (
+                            <VolumeX className="w-8 h-8 text-purple-400 animate-pulse" />
+                          ) : (
+                            <Volume2 className="w-8 h-8 text-purple-400" />
+                          )}
+                        </div>
+                        <div className="p-2">
+                          <p className="text-xs font-medium text-foreground text-center truncate">{sound.name}</p>
+                        </div>
+                      </Card>
+                    )
+                  })}
+                </div>
               </div>
-
-              <Button
-                onClick={handleGiveUp}
-                variant="outline"
-                size="lg"
-                className="text-lg px-10 py-6 mt-8 border-red-500/50 hover:bg-red-500/10 hover:border-red-500 text-red-400 hover:text-red-300 bg-transparent"
-              >
-                Give Up
-              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {!isFullscreen && (
-        <div className="space-y-8">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Zen Mode</h2>
-            <p className="text-muted-foreground">Drop into distraction-free focus and route XP to your goals.</p>
-          </div>
+      {isFullscreen &&
+        isMounted &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black"
+            style={{
+              backgroundImage: activeEnvironment?.background_value
+                ? `url(${activeEnvironment.background_value})`
+                : undefined,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <div className="absolute inset-0 bg-black/40" />
 
-          <Card className="p-8 bg-gradient-to-br from-purple-950/40 via-indigo-950/30 to-purple-900/40 border-purple-500/20">
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">
-                    Route XP to goal: <span className="text-xs">(Personal XP Only)</span>
-                  </label>
-                  <Select value={selectedGoal} onValueChange={setSelectedGoal}>
-                    <SelectTrigger className="bg-background/50 border-purple-500/30">
-                      <SelectValue placeholder="Select a goal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Goal (Personal XP Only)</SelectItem>
-                      {goals.map((goal) => (
-                        <SelectItem key={goal.id} value={goal.id}>
-                          {goal.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            <div className="relative z-10 w-full max-w-4xl px-8">
+              <div className="flex flex-col items-center justify-center space-y-8">
+                <div className="relative w-96 h-96 flex items-center justify-center">
+                  <svg className="absolute inset-0 w-full h-full -rotate-90">
+                    <circle
+                      cx="192"
+                      cy="192"
+                      r="170"
+                      fill="none"
+                      stroke="hsl(var(--muted))"
+                      strokeWidth="12"
+                      className="opacity-20"
+                    />
+                    <circle
+                      cx="192"
+                      cy="192"
+                      r="170"
+                      fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 170}`}
+                      strokeDashoffset={`${2 * Math.PI * 170 * (1 - timeLeft / (initialMinutes * 60))}`}
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+
+                  <div className="text-center">
+                    <div className="text-9xl font-bold text-white tabular-nums">{formatTime(timeLeft)}</div>
+                    {selectedGoal !== "none" && goals.find((g) => g.id === selectedGoal) && (
+                      <p className="text-lg text-muted-foreground mt-6">
+                        → {goals.find((g) => g.id === selectedGoal)?.title}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Select task:</label>
-                  <Select value={selectedTask} onValueChange={setSelectedTask}>
-                    <SelectTrigger className="bg-background/50 border-purple-500/30">
-                      <SelectValue placeholder="Select a task" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Task</SelectItem>
-                      {tasks.map((task) => (
-                        <SelectItem key={task.id} value={task.id}>
-                          {task.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="text-8xl font-bold text-foreground mb-6 tabular-nums">{formatTime(timeLeft)}</div>
-
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 border border-amber-500/30 rounded-full mb-8">
-                  <span className="text-amber-400">⚡</span>
-                  <span className="font-semibold text-amber-300">+{Math.floor(initialMinutes * 5)} XP</span>
+                <div className="flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full">
+                  <span className="text-3xl">⚡</span>
+                  <span className="text-xl font-bold text-yellow-400">Earning {Math.floor(initialMinutes * 5)} XP</span>
                 </div>
 
-                {!isRunning ? (
-                  <Button size="lg" onClick={startFocus} className="bg-purple-600 hover:bg-purple-700 text-white px-8">
-                    <Play className="w-5 h-5 mr-2" />
-                    Start focus
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={handleGiveUp}
-                    className="px-8 border-red-500/50 hover:bg-red-500/10 hover:border-red-500 text-red-400 hover:text-red-300 bg-transparent"
-                  >
-                    Give Up
-                  </Button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { minutes: 15, xp: 75 },
-                  { minutes: 25, xp: 125 },
-                  { minutes: 45, xp: 225 },
-                  { minutes: 60, xp: 300 },
-                ].map(({ minutes, xp }) => (
-                  <Button
-                    key={minutes}
-                    variant="outline"
-                    onClick={() => {
-                      setInitialMinutes(minutes)
-                      setTimeLeft(minutes * 60)
-                      setShowXPPreview(true)
-                      setXpPreviewAmount(xp)
-                      setTimeout(() => setShowXPPreview(false), 2000)
-                    }}
-                    className="flex flex-col items-center gap-1 h-auto py-3 border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/10"
-                  >
-                    <span className="font-semibold text-foreground">{minutes} min</span>
-                    <span className="text-xs text-amber-400">{xp} XP</span>
-                  </Button>
-                ))}
+                <Button
+                  onClick={handleGiveUp}
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-10 py-6 mt-8 border-red-500/50 hover:bg-red-500/10 hover:border-red-500 text-red-400 hover:text-red-300 bg-transparent"
+                >
+                  Give Up
+                </Button>
               </div>
             </div>
-          </Card>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {showXPToast && <XpToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
       {showLevelUp && <LevelUpCelebration newLevel={newLevel} onClose={() => setShowLevelUp(false)} />}

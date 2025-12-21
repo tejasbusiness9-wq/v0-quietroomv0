@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Trophy, Crown, Medal, Zap, TrendingUp } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { getLevelInfo } from "@/lib/leveling-system"
 
 interface LeaderboardEntry {
   id: string
@@ -169,7 +170,7 @@ export default function LeaderboardPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{entry.user_class || "Novice Quester"}</p>
+                    <p className="text-sm text-muted-foreground">{getLevelInfo(entry.level).name}</p>
                   </div>
 
                   <div className="flex items-center gap-6 flex-shrink-0">

@@ -19,6 +19,7 @@ interface ProfileData {
   username: string | null
   display_name: string | null
   bio: string | null
+  aura: number
 }
 
 export default function ProfilePage({
@@ -63,6 +64,7 @@ export default function ProfilePage({
   const level = profile?.level || 1
   const totalXP = profile?.total_xp || 0
   const currentXP = profile?.current_xp || 0
+  const aura = profile?.aura || 0
   const xpForNextLevel = calculateXPForLevel(level)
   const xpProgress = (currentXP / xpForNextLevel) * 100
 
@@ -161,6 +163,18 @@ export default function ProfilePage({
               <p className="text-xs text-muted-foreground mt-1">
                 {user?.app_metadata?.provider === "google" ? "Synced from Google Account" : "From your account"}
               </p>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                <img src="/images/aura.png" alt="Aura" className="w-4 h-4" />
+                Aura Owned
+              </label>
+              <div className="px-4 py-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-primary/40 rounded-lg text-foreground font-semibold flex items-center gap-2">
+                <img src="/images/aura.png" alt="Aura" className="w-5 h-5" />
+                {aura.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Earn 50 Aura each time you level up</p>
             </div>
 
             {/* Join Date */}

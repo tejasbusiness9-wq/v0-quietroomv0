@@ -34,6 +34,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { XpToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
+import { getLevelInfo } from "@/lib/leveling-system"
 
 type PageType = "dashboard" | "goals" | "tasks" | "leaderboard" | "zen-mode" | "talk-to-q" | "community" | "profile"
 
@@ -472,7 +473,7 @@ export default function Home() {
 
   const userLevel = profileData?.level || 18
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player"
-  const userClass = "Arcane Builder"
+  const userClass = getLevelInfo(userLevel).name
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: Zap },
