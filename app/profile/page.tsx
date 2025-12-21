@@ -7,6 +7,11 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { getLevelInfo, calculateXPForLevel } from "@/lib/leveling-system"
 
+interface ProfilePageProps {
+  profileData?: any
+  profileStats?: any
+}
+
 interface ProfileData {
   level: number
   total_xp: number
@@ -16,68 +21,43 @@ interface ProfileData {
   bio: string | null
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({
+  profileData: initialProfileData,
+  profileStats: initialProfileStats,
+}: ProfilePageProps) {
   const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [stats, setStats] = useState({
-    goalsCompleted: 0,
-    tasksFinished: 0,
-    currentStreak: 0,
-    totalXP: 0,
-  })
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<ProfileData | null>(initialProfileData || null)
+  const [stats, setStats] = useState(
+    initialProfileStats || {
+      goalsCompleted: 0,
+      tasksFinished: 0,
+      currentStreak: 0,
+      totalXP: 0,
+    },
+  )
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
-    fetchProfileData()
+    fetchUser()
   }, [])
 
-  const fetchProfileData = async () => {
+  useEffect(() => {
+    if (initialProfileData) {
+      setProfile(initialProfileData)
+    }
+    if (initialProfileStats) {
+      setStats(initialProfileStats)
+    }
+  }, [initialProfileData, initialProfileStats])
+
+  const fetchUser = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      setLoading(false)
-      return
+    if (user) {
+      setUser(user)
     }
-
-    setUser(user)
-
-    // Fetch profile
-    const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", user.id).single()
-
-    if (profileData) {
-      setProfile(profileData)
-    }
-
-    // Fetch stats
-    const { data: goalsData } = await supabase
-      .from("goals")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "completed")
-
-    const { data: tasksData } = await supabase.from("tasks").select("id").eq("user_id", user.id).eq("completed", true)
-
-    const { data: streakData } = await supabase.from("streaks").select("current_streak").eq("user_id", user.id).single()
-
-    setStats({
-      goalsCompleted: goalsData?.length || 0,
-      tasksFinished: tasksData?.length || 0,
-      currentStreak: streakData?.current_streak || 0,
-      totalXP: profileData?.total_xp || 0,
-    })
-
-    setLoading(false)
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-muted-foreground">Loading profile...</div>
-      </div>
-    )
   }
 
   const level = profile?.level || 1

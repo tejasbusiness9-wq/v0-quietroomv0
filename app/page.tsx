@@ -3,7 +3,6 @@
 import {
   Settings,
   Search,
-  Home,
   Target,
   CheckSquare,
   Trophy,
@@ -16,29 +15,24 @@ import {
   Plus,
   Calendar,
 } from "lucide-react"
-import { useState, useRef, lazy, Suspense, memo, useEffect } from "react"
+import { useState, useRef, memo, useEffect } from "react"
 import { StatsSection } from "@/components/stats-section"
 import { ComingSoonBanner } from "@/components/coming-soon-banner"
+import { GoalsGallery } from "@/components/goals-gallery"
+import { GoalsList } from "@/components/goals-list"
+import { GoalDetailDrawer } from "@/components/goal-detail-drawer"
+import { GoalsInsights } from "@/components/goals-insights"
+import { MotivationalBanner } from "@/components/motivational-banner"
+import ZenModePage from "@/components/zen-mode-page"
+import TasksPage from "@/app/tasks/page"
+import ProfilePage from "@/app/profile/page"
+import TalkToQPage from "@/app/talk-to-q/page"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { XpToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
-
-const GoalsGallery = lazy(() => import("@/components/goals-gallery").then((m) => ({ default: m.GoalsGallery })))
-const GoalsList = lazy(() => import("@/components/goals-list").then((m) => ({ default: m.GoalsList })))
-const GoalDetailDrawer = lazy(() =>
-  import("@/components/goal-detail-drawer").then((m) => ({ default: m.GoalDetailDrawer })),
-)
-const GoalsInsights = lazy(() => import("@/components/goals-insights").then((m) => ({ default: m.GoalsInsights })))
-const MotivationalBanner = lazy(() =>
-  import("@/components/motivational-banner").then((m) => ({ default: m.MotivationalBanner })),
-)
-const MascotWithDock = lazy(() => import("@/components/mascot-with-dock").then((m) => ({ default: m.MascotWithDock })))
-const ZenModePage = lazy(() => import("@/components/zen-mode-page").then((m) => ({ default: m.default })))
-const TasksPage = lazy(() => import("@/app/tasks/page"))
-const ProfilePage = lazy(() => import("@/app/profile/page"))
 
 type PageType = "dashboard" | "goals" | "tasks" | "leaderboard" | "zen-mode" | "talk-to-q" | "community" | "profile"
 
@@ -67,7 +61,7 @@ const NavItem = memo(({ item, isActive, onClick }: any) => {
 
 NavItem.displayName = "NavItem"
 
-export default function Page() {
+export default function Home() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
   const router = useRouter()
@@ -85,6 +79,51 @@ export default function Page() {
   const [showXPToast, setShowXPToast] = useState(false)
   const [newLevel, setNewLevel] = useState<number | null>(null)
   const [showLevelUp, setShowLevelUp] = useState(false)
+
+  const [profileData, setProfileData] = useState<any>(null)
+  const [profileStats, setProfileStats] = useState<any>(null)
+
+  useEffect(() => {
+    fetchProfileData()
+  }, [])
+
+  const fetchProfileData = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    // Fetch profile
+    const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
+
+    if (profileData) {
+      setProfileData(profileData)
+    }
+
+    // Fetch stats
+    const { data: goalsData } = await supabase
+      .from("goals")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+
+    const { data: tasksData } = await supabase.from("tasks").select("id").eq("user_id", user.id).eq("completed", true)
+
+    const { data: streakData } = await supabase
+      .from("streaks")
+      .select("current_streak")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    setProfileStats({
+      goalsCompleted: goalsData?.length || 0,
+      tasksFinished: tasksData?.length || 0,
+      currentStreak: streakData?.current_streak || 0,
+      totalXP: profileData?.total_xp || 0,
+    })
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -181,6 +220,9 @@ export default function Page() {
 
       fetchTodaysTasks(user.id)
     }
+
+    // Refetch profile to update XP display
+    await fetchProfileData()
   }
 
   const handleSignOut = async () => {
@@ -320,7 +362,7 @@ export default function Page() {
         )
       case "goals":
         return (
-          <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
+          <>
             <div className="mb-8">
               <h2 className="text-4xl font-bold text-primary mb-2">Your Goals</h2>
               <p className="text-muted-foreground">Track your progress toward meaningful achievements</p>
@@ -336,33 +378,25 @@ export default function Page() {
               isOpen={isGoalDetailOpen}
               onClose={() => setIsGoalDetailOpen(false)}
             />
-          </Suspense>
+          </>
         )
       case "tasks":
         return (
-          <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
-            <TasksPage
-              onNavigateToZen={(taskId) => {
-                setZenModeTaskId(taskId)
-                setCurrentPage("zen-mode")
-              }}
-            />
-          </Suspense>
+          <TasksPage
+            onNavigateToZen={(taskId) => {
+              setZenModeTaskId(taskId)
+              setCurrentPage("zen-mode")
+            }}
+          />
         )
       case "zen-mode":
-        return (
-          <Suspense fallback={<div className="text-center py-12">Loading Zen Mode...</div>}>
-            <ZenModePage taskId={zenModeTaskId} />
-          </Suspense>
-        )
+        return <ZenModePage taskId={zenModeTaskId} />
+      case "talk-to-q":
+        return <TalkToQPage />
       case "community":
         return <ComingSoonBanner />
       case "profile":
-        return (
-          <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
-            <ProfilePage />
-          </Suspense>
-        )
+        return <ProfilePage profileData={profileData} profileStats={profileStats} />
       default:
         return (
           <div className="mb-8">
@@ -424,10 +458,6 @@ export default function Page() {
   }
 
   const handlePageChange = (page: PageType) => {
-    if (page === "talk-to-q") {
-      router.push("/talk-to-q")
-      return
-    }
     setCurrentPage(page)
     audioRef.current?.play().catch(() => {})
   }
@@ -437,12 +467,12 @@ export default function Page() {
     setIsGoalDetailOpen(true)
   }
 
-  const userLevel = 18
+  const userLevel = profileData?.level || 18
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player"
   const userClass = "Arcane Builder"
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "dashboard", label: "Dashboard", icon: Zap },
     { id: "goals", label: "Goals", icon: Target },
     { id: "tasks", label: "Tasks", icon: CheckSquare },
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
