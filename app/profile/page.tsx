@@ -1,20 +1,92 @@
 "use client"
 
-import { Mail, User, Calendar, Trophy, Target, Zap, Award, Star, Shield } from "lucide-react"
+import { Mail, User, Calendar, Trophy, Target, Zap, Star } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { getLevelInfo, calculateXPForLevel } from "@/lib/leveling-system"
+
+interface ProfileData {
+  level: number
+  total_xp: number
+  current_xp: number
+  username: string | null
+  display_name: string | null
+  bio: string | null
+}
 
 export default function ProfilePage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [stats, setStats] = useState({
+    goalsCompleted: 0,
+    tasksFinished: 0,
+    currentStreak: 0,
+    totalXP: 0,
+  })
+  const [loading, setLoading] = useState(true)
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
+    fetchProfileData()
+  }, [])
+
+  const fetchProfileData = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    setUser(user)
+
+    // Fetch profile
+    const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", user.id).single()
+
+    if (profileData) {
+      setProfile(profileData)
+    }
+
+    // Fetch stats
+    const { data: goalsData } = await supabase
+      .from("goals")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+
+    const { data: tasksData } = await supabase.from("tasks").select("id").eq("user_id", user.id).eq("completed", true)
+
+    const { data: streakData } = await supabase.from("streaks").select("current_streak").eq("user_id", user.id).single()
+
+    setStats({
+      goalsCompleted: goalsData?.length || 0,
+      tasksFinished: tasksData?.length || 0,
+      currentStreak: streakData?.current_streak || 0,
+      totalXP: profileData?.total_xp || 0,
     })
-  }, [supabase])
+
+    setLoading(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-muted-foreground">Loading profile...</div>
+      </div>
+    )
+  }
+
+  const level = profile?.level || 1
+  const totalXP = profile?.total_xp || 0
+  const currentXP = profile?.current_xp || 0
+  const xpForNextLevel = calculateXPForLevel(level)
+  const xpProgress = (currentXP / xpForNextLevel) * 100
+
+  const levelInfo = getLevelInfo(level)
 
   const userData = {
     name: user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player",
@@ -23,47 +95,19 @@ export default function ProfilePage() {
     joinDate: user?.created_at
       ? new Date(user.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
       : "Recently",
-    level: 18,
-    class: "Arcane Builder",
-    totalXP: 12450,
-    nextLevelXP: 15000,
   }
 
-  const stats = [
-    { label: "Goals Completed", value: "12", icon: Target, color: "text-emerald-400" },
-    { label: "Tasks Finished", value: "87", icon: Trophy, color: "text-purple-400" },
-    { label: "Current Streak", value: "18 days", icon: Zap, color: "text-orange-400" },
-    { label: "Total XP Earned", value: "12,450", icon: Star, color: "text-yellow-400" },
-  ]
-
-  const achievements = [
+  const displayStats = [
+    { label: "Goals Completed", value: stats.goalsCompleted.toString(), icon: Target, color: "text-emerald-400" },
+    { label: "Tasks Finished", value: stats.tasksFinished.toString(), icon: Trophy, color: "text-purple-400" },
     {
-      title: "Early Adopter",
-      description: "Joined Questboard in the first month",
-      icon: Shield,
-      unlocked: true,
-    },
-    {
-      title: "Streak Master",
-      description: "Maintained a 7-day streak",
+      label: "Current Streak",
+      value: `${stats.currentStreak} days`,
       icon: Zap,
-      unlocked: true,
+      color: "text-orange-400",
     },
-    {
-      title: "Goal Crusher",
-      description: "Complete 10 goals",
-      icon: Target,
-      unlocked: true,
-    },
-    {
-      title: "Level 20",
-      description: "Reach level 20",
-      icon: Award,
-      unlocked: false,
-    },
+    { label: "Total XP Earned", value: totalXP.toLocaleString(), icon: Star, color: "text-yellow-400" },
   ]
-
-  const xpProgress = (userData.totalXP / userData.nextLevelXP) * 100
 
   return (
     <div className="space-y-8">
@@ -86,14 +130,21 @@ export default function ProfilePage() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground text-lg border-4 border-background">
-                {userData.level}
+              <div
+                className={`absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center font-bold text-primary-foreground text-lg border-4 border-background ${levelInfo.glow}`}
+              >
+                {level}
               </div>
             </div>
             <div className="mt-4 text-center">
-              <div className="px-4 py-1 bg-primary/20 border border-primary/40 rounded-full text-sm font-semibold text-primary">
-                {userData.class}
+              <div
+                className={`px-4 py-1 bg-primary/20 border border-primary/40 rounded-full text-sm font-semibold ${levelInfo.color}`}
+              >
+                {levelInfo.name}
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Tier {levelInfo.tierNumber}: {levelInfo.tier}
+              </p>
             </div>
           </div>
 
@@ -143,9 +194,9 @@ export default function ProfilePage() {
         {/* XP Progress Bar */}
         <div className="mt-8 pt-6 border-t border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground">Progress to Level {userData.level + 1}</span>
+            <span className="text-sm font-medium text-muted-foreground">Progress to Level {level + 1}</span>
             <span className="text-sm font-semibold text-primary">
-              {userData.totalXP.toLocaleString()} / {userData.nextLevelXP.toLocaleString()} XP
+              {currentXP.toLocaleString()} / {xpForNextLevel.toLocaleString()} XP
             </span>
           </div>
           <div className="relative h-3 bg-muted rounded-full overflow-hidden">
@@ -156,12 +207,13 @@ export default function ProfilePage() {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-2 italic">"{levelInfo.title}"</p>
         </div>
       </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {displayStats.map((stat, index) => (
           <Card key={index} className="rune-card p-6">
             <div className="flex items-start justify-between">
               <div>
@@ -174,48 +226,6 @@ export default function ProfilePage() {
             </div>
           </Card>
         ))}
-      </div>
-
-      {/* Achievements */}
-      <Card className="rune-card p-8">
-        <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-          <Award className="w-6 h-6 text-primary" />
-          Achievements
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {achievements.map((achievement, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-lg border transition-all ${
-                achievement.unlocked ? "bg-primary/10 border-primary/40" : "bg-muted/30 border-border opacity-60"
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    achievement.unlocked ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  <achievement.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">{achievement.title}</h4>
-                  <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                  {achievement.unlocked && (
-                    <span className="inline-block mt-2 text-xs font-semibold text-emerald-400">Unlocked!</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Sign Out Button */}
-      <div className="flex justify-center pt-4">
-        <button className="px-6 py-3 bg-destructive/10 text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/20 transition-colors font-semibold">
-          Sign Out
-        </button>
       </div>
     </div>
   )

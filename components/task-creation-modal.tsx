@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { X, ChevronDown, ChevronUp } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 interface NewTask {
   name: string
@@ -33,6 +34,39 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
     tags: [],
   })
   const [tagInput, setTagInput] = useState("")
+  const [goals, setGoals] = useState<any[]>([])
+  const [loadingGoals, setLoadingGoals] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchGoals()
+    }
+  }, [isOpen])
+
+  const fetchGoals = async () => {
+    setLoadingGoals(true)
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLoadingGoals(false)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("goals")
+      .select("id, title, category")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+
+    if (!error && data) {
+      setGoals(data)
+    }
+    setLoadingGoals(false)
+  }
 
   const handleCreateTask = () => {
     if (!newTask.name.trim()) return
@@ -173,38 +207,27 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
                 </div>
               </div>
 
-              {/* Effort */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-3">Effort</label>
-                <div className="flex gap-3">
-                  {(["small", "medium", "large"] as const).map((effort) => (
-                    <button
-                      key={effort}
-                      onClick={() => setNewTask({ ...newTask, effort })}
-                      className={`flex-1 px-4 py-2 rounded-lg border-2 transition-all font-medium capitalize ${
-                        newTask.effort === effort
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border hover:border-primary/50 text-foreground"
-                      }`}
-                    >
-                      {effort}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Link to Goal */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Link to goal</label>
                 <select
                   value={newTask.linkedGoal}
                   onChange={(e) => setNewTask({ ...newTask, linkedGoal: e.target.value })}
-                  className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={loadingGoals}
+                  className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 >
                   <option value="">None</option>
-                  <option value="ui-ux-case-study">UI/UX Case Study</option>
-                  <option value="learn-typescript">Learn TypeScript</option>
-                  <option value="fitness-journey">Fitness Journey</option>
+                  {loadingGoals ? (
+                    <option disabled>Loading goals...</option>
+                  ) : goals.length === 0 ? (
+                    <option disabled>No goals yet. Create one first!</option>
+                  ) : (
+                    goals.map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.title}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -229,14 +252,17 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
                   </button>
                 </div>
                 {newTask.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-border/50">
                     {newTask.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium flex items-center gap-2"
+                        className="px-3 py-1.5 bg-gradient-to-r from-primary/20 to-accent/20 text-primary rounded-full text-sm font-semibold flex items-center gap-2 border border-primary/30 shadow-md hover:shadow-lg transition-all"
                       >
-                        {tag}
-                        <button onClick={() => handleRemoveTag(tag)} className="hover:text-primary/70">
+                        #{tag}
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-primary/70 transition-colors"
+                        >
                           <X className="w-3 h-3" />
                         </button>
                       </span>

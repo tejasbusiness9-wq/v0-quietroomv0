@@ -1,9 +1,90 @@
 "use client"
 
-import { Clock, Star, Zap } from "lucide-react"
+import { Clock, Star, Zap, TrendingUp } from "lucide-react"
 import { MascotDialog } from "./mascot-dialog"
+import { useState, useEffect } from "react"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 export function StatsSection() {
+  const [stats, setStats] = useState({
+    activeTasks: 0,
+    completedToday: 0,
+    xpEarnedToday: 0,
+    activeGoals: 0,
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  const fetchStats = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    const today = new Date().toISOString().split("T")[0]
+
+    const [tasksRes, completedRes, goalsRes, dailyXpRes] = await Promise.all([
+      supabase.from("tasks").select("id", { count: "exact" }).eq("user_id", user.id).eq("status", "active"),
+      supabase
+        .from("tasks")
+        .select("id", { count: "exact" })
+        .eq("user_id", user.id)
+        .eq("completed", true)
+        .gte("completed_at", today),
+      supabase.from("goals").select("id", { count: "exact" }).eq("user_id", user.id).eq("status", "active"),
+      supabase
+        .from("activity_log")
+        .select("xp_earned")
+        .eq("user_id", user.id)
+        .gte("created_at", `${today}T00:00:00`)
+        .lte("created_at", `${today}T23:59:59`),
+    ])
+
+    // Sum up XP earned today from activity log
+    const dailyXp = dailyXpRes.data?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
+
+    setStats({
+      activeTasks: tasksRes.count || 0,
+      completedToday: completedRes.count || 0,
+      xpEarnedToday: dailyXp,
+      activeGoals: goalsRes.count || 0,
+    })
+    setLoading(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="mb-8 flex items-center justify-center py-12">
+        <Zap className="w-8 h-8 text-primary animate-pulse" />
+      </div>
+    )
+  }
+
+  const hasData = stats.activeTasks > 0 || stats.completedToday > 0 || stats.xpEarnedToday > 0
+
+  if (!hasData) {
+    return (
+      <div className="mb-8">
+        <div className="rune-card p-8 text-center">
+          <div className="relative inline-block mb-4">
+            <TrendingUp className="w-16 h-16 text-muted-foreground/30 animate-bounce" />
+            <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full animate-pulse" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">No Stats Yet</h3>
+          <p className="text-muted-foreground">Create tasks and goals to start tracking your progress!</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mb-8 flex items-stretch gap-8">
       <div className="flex-1 grid grid-cols-3 gap-6">
@@ -12,7 +93,7 @@ export function StatsSection() {
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm mb-3 font-medium">Active Tasks</p>
-              <p className="text-4xl font-bold text-foreground">4</p>
+              <p className="text-4xl font-bold text-foreground">{stats.activeTasks}</p>
             </div>
             <div className="rune-icon">
               <Clock className="w-7 h-7 text-primary" />
@@ -39,8 +120,6 @@ export function StatsSection() {
                 strokeLinejoin="round"
                 opacity="0.9"
               />
-              <rect x="50" y="25" width="18" height="12" rx="2" fill="hsl(290, 100%, 50%)" opacity="0.5" />
-              <rect x="132" y="30" width="18" height="10" rx="2" fill="hsl(290, 100%, 50%)" opacity="0.4" />
             </svg>
           </div>
         </div>
@@ -50,7 +129,7 @@ export function StatsSection() {
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm mb-3 font-medium">Completed Today</p>
-              <p className="text-4xl font-bold text-foreground">1</p>
+              <p className="text-4xl font-bold text-foreground">{stats.completedToday}</p>
             </div>
             <div className="rune-icon">
               <Star className="w-7 h-7 text-primary" />
@@ -67,10 +146,7 @@ export function StatsSection() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <line x1="50" y1="70" x2="150" y2="70" stroke="hsl(290, 100%, 50%)" strokeWidth="2" opacity="0.7" />
-              <circle cx="60" cy="40" r="3.5" fill="hsl(290, 100%, 50%)" opacity="0.9" />
               <circle cx="100" cy="30" r="3.5" fill="hsl(290, 100%, 50%)" opacity="1" />
-              <circle cx="140" cy="40" r="3.5" fill="hsl(290, 100%, 50%)" opacity="0.9" />
             </svg>
           </div>
         </div>
@@ -80,7 +156,7 @@ export function StatsSection() {
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm mb-3 font-medium">XP Earned Today</p>
-              <p className="text-4xl font-bold text-foreground">10</p>
+              <p className="text-4xl font-bold text-foreground">{stats.xpEarnedToday}</p>
             </div>
             <div className="rune-icon">
               <Zap className="w-7 h-7 text-yellow-500" />
@@ -98,9 +174,6 @@ export function StatsSection() {
                 strokeWidth="1.5"
                 opacity="0.6"
               />
-              <line x1="100" y1="35" x2="100" y2="15" stroke="hsl(290, 100%, 50%)" strokeWidth="1.5" opacity="0.5" />
-              <line x1="125" y1="55" x2="145" y2="55" stroke="hsl(290, 100%, 50%)" strokeWidth="1.5" opacity="0.5" />
-              <line x1="75" y1="55" x2="55" y2="55" stroke="hsl(290, 100%, 50%)" strokeWidth="1.5" opacity="0.5" />
             </svg>
           </div>
         </div>

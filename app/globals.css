@@ -293,4 +293,24 @@
   .zen-checkbox {
     @apply w-5 h-5 rounded border-2 border-primary/40 bg-transparent checked:bg-primary checked:border-primary transition-all;
   }
+
+  /* Fixed border-snake animation class name */
+  @keyframes border-snake {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .border-snake {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    background-size: 200% 100%;
+    animation: border-snake 2s linear infinite;
+  }
+
+  .animate-snake-border {
+    animation: border-snake 2s linear infinite;
+  }
 }

@@ -15,7 +15,6 @@ import {
   MessageSquare,
   Users,
   LogOut,
-  Bell,
   Settings,
   Search,
 } from "lucide-react"
@@ -54,6 +53,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = getSupabaseBrowserClient()
   const audioRef = useRef<HTMLAudioElement>(null)
 
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [showSearchResults, setShowSearchResults] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
@@ -67,6 +72,68 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe()
   }, [supabase])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim()) {
+        handleSearch(searchQuery)
+      } else {
+        setSearchResults([])
+        setShowSearchResults(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
+
+  const handleSearch = async (query: string) => {
+    if (!user) return
+
+    setSearchLoading(true)
+    const supabase = getSupabaseBrowserClient()
+
+    // Search tasks
+    const { data: tasks } = await supabase
+      .from("tasks")
+      .select("id, title, description")
+      .eq("user_id", user.id)
+      .ilike("title", `%${query}%`)
+      .limit(5)
+
+    // Search goals
+    const { data: goals } = await supabase
+      .from("goals")
+      .select("id, title, description")
+      .eq("user_id", user.id)
+      .ilike("title", `%${query}%`)
+      .limit(5)
+
+    // Search profiles (other users)
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, username")
+      .or(`display_name.ilike.%${query}%,username.ilike.%${query}%`)
+      .limit(5)
+
+    setSearchResults([
+      ...(tasks || []).map((t: any) => ({ ...t, type: "task" })),
+      ...(goals || []).map((g: any) => ({ ...g, type: "goal" })),
+      ...(profiles || []).map((p: any) => ({ ...p, type: "profile" })),
+    ])
+    setShowSearchResults(true)
+    setSearchLoading(false)
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -97,7 +164,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="dark">
-      <audio ref={audioRef} src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/menu-l7V13Z8R8pyT6h06SrSmc79hFaau71.mp3" preload="auto" />
+      <audio ref={audioRef} src="/images/menu.mp3" preload="auto" />
 
       <div className="flex h-screen bg-background text-foreground">
         {/* Sidebar */}
@@ -184,22 +251,115 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Top Bar */}
           <div className="bg-background border-b border-border px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1">
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors" onClick={() => handleNavigation("/")}>
-                <Home className="w-5 h-5" />
-              </button>
-              <div className="relative flex-1 max-w-md">
+              <div className="relative flex-1 max-w-md" ref={searchRef}>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
                   placeholder="Search goals, tasks, or players..."
                   className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+
+                {showSearchResults && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-2xl shadow-primary/10 max-h-96 overflow-y-auto z-50">
+                    {searchLoading ? (
+                      <div className="p-4 text-center text-muted-foreground">
+                        <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                        Searching...
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground">No results found</div>
+                    ) : (
+                      <div className="py-2">
+                        {/* Tasks */}
+                        {searchResults.some((r) => r.type === "task") && (
+                          <div>
+                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">Tasks</div>
+                            {searchResults
+                              .filter((r) => r.type === "task")
+                              .map((result) => (
+                                <button
+                                  key={result.id}
+                                  onClick={() => {
+                                    router.push("/tasks")
+                                    setShowSearchResults(false)
+                                    setSearchQuery("")
+                                  }}
+                                  className="w-full px-4 py-2 hover:bg-muted/50 transition-colors text-left flex items-center gap-3"
+                                >
+                                  <CheckSquare className="w-4 h-4 text-primary" />
+                                  <div>
+                                    <p className="font-medium text-foreground">{result.title}</p>
+                                    {result.description && (
+                                      <p className="text-xs text-muted-foreground truncate">{result.description}</p>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                          </div>
+                        )}
+
+                        {/* Goals */}
+                        {searchResults.some((r) => r.type === "goal") && (
+                          <div>
+                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">Goals</div>
+                            {searchResults
+                              .filter((r) => r.type === "goal")
+                              .map((result) => (
+                                <button
+                                  key={result.id}
+                                  onClick={() => {
+                                    router.push("/")
+                                    setShowSearchResults(false)
+                                    setSearchQuery("")
+                                  }}
+                                  className="w-full px-4 py-2 hover:bg-muted/50 transition-colors text-left flex items-center gap-3"
+                                >
+                                  <Target className="w-4 h-4 text-primary" />
+                                  <div>
+                                    <p className="font-medium text-foreground">{result.title}</p>
+                                    {result.description && (
+                                      <p className="text-xs text-muted-foreground truncate">{result.description}</p>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                          </div>
+                        )}
+
+                        {/* Profiles */}
+                        {searchResults.some((r) => r.type === "profile") && (
+                          <div>
+                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">Users</div>
+                            {searchResults
+                              .filter((r) => r.type === "profile")
+                              .map((result) => (
+                                <button
+                                  key={result.user_id}
+                                  onClick={() => {
+                                    router.push(`/profile/${result.user_id}`)
+                                    setShowSearchResults(false)
+                                    setSearchQuery("")
+                                  }}
+                                  className="w-full px-4 py-2 hover:bg-muted/50 transition-colors text-left flex items-center gap-3"
+                                >
+                                  <User className="w-4 h-4 text-primary" />
+                                  <p className="font-medium text-foreground">
+                                    {result.display_name || result.username}
+                                  </p>
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                <Bell className="w-5 h-5" />
-              </button>
               <button className="p-2 hover:bg-muted rounded-lg transition-colors">
                 <Settings className="w-5 h-5" />
               </button>

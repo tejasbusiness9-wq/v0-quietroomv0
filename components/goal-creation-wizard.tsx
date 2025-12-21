@@ -16,7 +16,7 @@ interface NewGoal {
   category: "weekly" | "monthly" | "yearly"
   motivation: string
   milestones: string[]
-  difficulty: "easy" | "medium" | "hard"
+  target_hours: number
   image: string
 }
 
@@ -33,7 +33,7 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
     category: "monthly",
     motivation: "",
     milestones: ["", "", ""],
-    difficulty: "medium",
+    target_hours: 10,
     image: "",
   })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -44,7 +44,7 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
     { step: 2, title: "When do you want to complete it?", description: "Choose your timeline" },
     { step: 3, title: "Why does this matter?", description: "Connect emotionally" },
     { step: 4, title: "Break it into milestones", description: "Define measurable steps" },
-    { step: 5, title: "How difficult is this?", description: "Set the XP weight" },
+    { step: 5, title: "How much time will this take?", description: "Set your target hours" },
     { step: 6, title: "Pick an inspiring image", description: "Make it visual" },
   ]
 
@@ -107,7 +107,7 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
       category: "monthly",
       motivation: "",
       milestones: ["", "", ""],
-      difficulty: "medium",
+      target_hours: 10,
       image: "",
     })
     setImagePreview(null)
@@ -117,6 +117,10 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
     const updated = [...newGoal.milestones]
     updated[index] = value
     setNewGoal({ ...newGoal, milestones: updated })
+  }
+
+  const calculateEstimatedXP = (hours: number): number => {
+    return hours * 60 * 5
   }
 
   if (!isOpen) return null
@@ -216,26 +220,51 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
             )}
 
             {currentStep === 5 && (
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-foreground mb-2">Difficulty Level</label>
-                {(["easy", "medium", "hard"] as const).map((diff) => (
-                  <button
-                    key={diff}
-                    onClick={() => setNewGoal({ ...newGoal, difficulty: diff })}
-                    className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                      newGoal.difficulty === diff
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50 bg-muted/50"
-                    }`}
-                  >
-                    <span className="font-semibold text-foreground capitalize">{diff}</span>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {diff === "easy" && "Achievable with minimal effort"}
-                      {diff === "medium" && "Requires consistent effort"}
-                      {diff === "hard" && "Very challenging, high rewards"}
-                    </p>
-                  </button>
-                ))}
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-foreground mb-2">Target Hours</label>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {[
+                    { label: "Light Work", hours: 5 },
+                    { label: "Solid Grind", hours: 10 },
+                    { label: "Hardcore", hours: 20 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.hours}
+                      onClick={() => setNewGoal({ ...newGoal, target_hours: preset.hours })}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        newGoal.target_hours === preset.hours
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50 bg-muted/50"
+                      }`}
+                    >
+                      <span className="font-semibold text-foreground block">{preset.label}</span>
+                      <span className="text-xs text-muted-foreground block mt-1">{preset.hours} Hours</span>
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-2">Or enter custom hours:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={newGoal.target_hours}
+                    onChange={(e) => setNewGoal({ ...newGoal, target_hours: Number.parseInt(e.target.value) || 1 })}
+                    className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-foreground font-medium">
+                    Estimated XP Value:{" "}
+                    <span className="text-primary font-bold">
+                      {calculateEstimatedXP(newGoal.target_hours).toLocaleString()}
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Based on 5 XP per minute of focused work</p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Tip: Be realistic! Each hour = 300 XP (60 min × 5 XP)
+                </p>
               </div>
             )}
 
