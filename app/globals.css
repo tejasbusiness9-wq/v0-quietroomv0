@@ -211,6 +211,10 @@
     }
   }
 
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
   @keyframes float {
     0%,
     100% {
@@ -227,10 +231,6 @@
       transform: translateY(-100vh) translateX(100px);
       opacity: 0;
     }
-  }
-
-  .animate-blob {
-    animation: blob 7s infinite;
   }
 
   .animate-float {
@@ -312,5 +312,34 @@
 
   .animate-snake-border {
     animation: border-snake 2s linear infinite;
+  }
+
+  /* Update leaderboard animations to use brand purple instead of yellow */
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 30px rgba(147, 51, 234, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 50px rgba(147, 51, 234, 0.6);
+    }
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s linear infinite;
+    background-size: 200% 100%;
   }
 }

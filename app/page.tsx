@@ -27,6 +27,7 @@ import ZenModePage from "@/components/zen-mode-page"
 import TasksPage from "@/app/tasks/page"
 import ProfilePage from "@/app/profile/page"
 import TalkToQPage from "@/app/talk-to-q/page"
+import LeaderboardPage from "./leaderboard/page"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -393,6 +394,8 @@ export default function Home() {
         return <ZenModePage taskId={zenModeTaskId} />
       case "talk-to-q":
         return <TalkToQPage />
+      case "leaderboard":
+        return <LeaderboardPage />
       case "community":
         return <ComingSoonBanner />
       case "profile":
