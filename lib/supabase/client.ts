@@ -3,25 +3,21 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 let supabaseClient: SupabaseClient | null = null
 
-if (typeof window !== "undefined") {
-  console.log("[v0] Creating Supabase client singleton at module initialization")
-  supabaseClient = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-}
-
 export function getSupabaseBrowserClient() {
   if (typeof window === "undefined") {
-    throw new Error("getSupabaseBrowserClient should only be called on the client side")
+    // During SSR/build, return a fresh client to avoid singleton pollution
+    return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   }
 
+  // Client-side: use singleton pattern
   if (!supabaseClient) {
-    throw new Error("Supabase client not initialized")
+    supabaseClient = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
   }
 
-  console.log("[v0] getSupabaseBrowserClient() called - returning existing singleton")
   return supabaseClient
 }
 
-export const supabase = supabaseClient
+export const supabase = getSupabaseBrowserClient()
