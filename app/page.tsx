@@ -162,32 +162,21 @@ export default function Page() {
       .eq("id", taskId)
 
     if (!error && newState) {
-      // Award 10 XP for completing a task
-      const { data: result } = await supabase.rpc("award_xp", {
-        p_user_id: user.id,
-        p_xp_amount: 10,
-        p_activity_type: "task_completion",
-        p_related_id: taskId,
-      })
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("total_xp, current_xp, level, xp_to_next_level")
+        .eq("user_id", user.id)
+        .maybeSingle()
 
-      if (result) {
-        const { xp_earned, leveled_up, level } = result
-
-        // Show XP toast
+      if (profile) {
         setXpToastData({
-          xp: xp_earned,
+          xp: 3,
           message: "Task completed!",
         })
         setShowXPToast(true)
         setTimeout(() => setShowXPToast(false), 3000)
 
-        // Show level up celebration if leveled up
-        if (leveled_up) {
-          setTimeout(() => {
-            setNewLevel(level)
-            setShowLevelUp(true)
-          }, 3500)
-        }
+        console.log("[v0] Task completed - Profile XP:", profile.current_xp, "/", profile.xp_to_next_level)
       }
 
       fetchTodaysTasks(user.id)
@@ -352,7 +341,12 @@ export default function Page() {
       case "tasks":
         return (
           <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
-            <TasksPage />
+            <TasksPage
+              onNavigateToZen={(taskId) => {
+                setZenModeTaskId(taskId)
+                setCurrentPage("zen-mode")
+              }}
+            />
           </Suspense>
         )
       case "zen-mode":

@@ -4,7 +4,6 @@ import { Plus, Calendar, Target, Zap } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 import { XPToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 
@@ -21,7 +20,7 @@ interface Task {
   status: "active" | "completed"
 }
 
-export default function TasksPage() {
+export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (taskId: string) => void }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,7 +28,6 @@ export default function TasksPage() {
   const [xpToastData, setXpToastData] = useState({ xp: 0, message: "" })
   const [showLevelUp, setShowLevelUp] = useState(false)
   const [newLevel, setNewLevel] = useState(0)
-  const router = useRouter()
 
   useEffect(() => {
     fetchTasks()
@@ -73,6 +71,8 @@ export default function TasksPage() {
     setTasks((prevTasks) => prevTasks.map((t) => (t.id === id ? { ...t, completed: newState } : t)))
 
     try {
+      console.log("[v0] Updating task completion:", id, "to", newState)
+
       const { error: taskError } = await supabase
         .from("tasks")
         .update({
@@ -89,25 +89,25 @@ export default function TasksPage() {
           .from("profiles")
           .select("total_xp, current_xp, level, xp_to_next_level")
           .eq("user_id", user.id)
-          .single()
+          .maybeSingle()
 
         if (profile) {
-          // Show XP toast
+          console.log("[v0] Profile after task completion:", profile)
+
           setXpToastData({
-            xp: 10,
+            xp: 3,
             message: "Task completed!",
           })
           setShowXPToast(true)
           setTimeout(() => setShowXPToast(false), 3000)
 
-          // Check if level progress fills the bar (this is purely visual feedback)
           const xpProgress = (profile.current_xp / profile.xp_to_next_level) * 100
           console.log("[v0] XP Progress:", xpProgress, "% -", profile.current_xp, "/", profile.xp_to_next_level)
         }
       }
 
       // Refresh tasks from database
-      fetchTasks()
+      await fetchTasks()
     } catch (error) {
       console.error("[v0] Error in task completion:", error)
       // Revert optimistic update on error
@@ -142,7 +142,9 @@ export default function TasksPage() {
   }
 
   const handleFocusTask = (taskId: string) => {
-    router.push(`/zen?taskId=${taskId}`)
+    if (onNavigateToZen) {
+      onNavigateToZen(taskId)
+    }
   }
 
   const getPriorityColor = (priority: string) => {
