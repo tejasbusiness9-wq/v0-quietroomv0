@@ -16,7 +16,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = getSupabaseBrowserClient()
 
   const TEST_EMAIL = "testuser@gmail.com"
   const TEST_PASSWORD = "TestPassword123!"
@@ -26,6 +25,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -46,6 +46,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -75,6 +76,7 @@ export default function LoginPage() {
       await new Promise((resolve) => setTimeout(resolve, 500))
 
       console.log("[v0] Dev bypass: Signing in...")
+      const supabase = getSupabaseBrowserClient()
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: TEST_EMAIL,
         password: TEST_PASSWORD,
