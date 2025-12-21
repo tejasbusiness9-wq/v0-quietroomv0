@@ -7,9 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { XpToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
-import { MountainEnvironment } from "@/components/zen/environments/mountain-environment"
-import { ArtStoreEnvironment } from "@/components/zen/environments/art-store-environment"
-import { useToast } from "@/components/ui/use-toast" // Import useToast
+import { useToast } from "@/components/ui/use-toast"
 
 interface Goal {
   id: string
@@ -31,9 +29,10 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [selectedEnvironment, setSelectedEnvironment] = useState<"mountain" | "art-store" | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
-  const [selectedGoal, setSelectedGoal] = useState<string | "none">("none") // Updated to non-empty string
+  const [selectedGoal, setSelectedGoal] = useState<string | "none">("none")
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [selectedTask, setSelectedTask] = useState<string | "none">("none")
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [initialMinutes, setInitialMinutes] = useState(25)
@@ -47,25 +46,41 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
   const [xpPreviewAmount, setXpPreviewAmount] = useState(0)
   const { toast } = useToast()
 
-  const environments = [
-    { id: "mountain", name: "Mountain" },
-    { id: "art-store", name: "Art Store" },
-    { id: null, name: "Default" },
-  ]
-
   useEffect(() => {
     fetchGoals()
+    fetchTasks()
     if (taskId) {
       loadTask(taskId)
     }
   }, [taskId])
 
+  const fetchTasks = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, title, goal_id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+
+    if (!error && data) {
+      setTasks(data)
+    }
+  }
+
   const loadTask = async (taskId: string) => {
     const supabase = getSupabaseBrowserClient()
-    const { data, error } = await supabase.from("tasks").select("id, title, goal_id").eq("id", taskId).single()
+    const { data, error } = await supabase.from("tasks").select("id, title, goal_id").eq("id", taskId).maybeSingle()
 
     if (data && !error) {
       setTargetTask(data)
+      setSelectedTask(data.id)
       if (data.goal_id) {
         setSelectedGoal(data.goal_id)
       }
@@ -106,22 +121,15 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
 
   useEffect(() => {
     if (timeLeft === 0 && isRunning) {
-      console.log("[v0] Timer hit 0:00, triggering completion...")
       handleTimerComplete()
     }
   }, [timeLeft, isRunning])
 
   const handleTimerComplete = async () => {
-    console.log("[v0] Timer completed, processing XP...")
     setIsRunning(false)
-
-    // Exit fullscreen
-    if (isFullscreen) {
-      setIsFullscreen(false)
-    }
+    setIsFullscreen(false)
 
     if (!sessionId) {
-      console.log("[v0] No session ID, skipping XP award")
       return
     }
 
@@ -133,13 +141,12 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
     if (!user) return
 
     const xpEarned = Math.floor(initialMinutes * 5)
-    console.log("[v0] XP earned:", xpEarned, "for", initialMinutes, "minutes")
 
     const { data: currentProfile } = await supabase
       .from("profiles")
       .select("total_xp, current_xp, level, xp_to_next_level")
       .eq("user_id", user.id)
-      .single()
+      .maybeSingle()
 
     if (currentProfile) {
       const newTotalXP = currentProfile.total_xp + xpEarned
@@ -147,14 +154,13 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
       let newLevel = currentProfile.level
       let newXPToNextLevel = currentProfile.xp_to_next_level
 
-      // Check for level up
       while (newCurrentXP >= newXPToNextLevel) {
         newLevel += 1
         newCurrentXP -= newXPToNextLevel
         newXPToNextLevel = Math.floor(150 * Math.pow(1.15, newLevel - 1))
       }
 
-      const { error: profileError } = await supabase
+      await supabase
         .from("profiles")
         .update({
           total_xp: newTotalXP,
@@ -164,10 +170,6 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id)
-
-      if (profileError) {
-        console.error("[v0] Error updating profile:", profileError)
-      }
 
       await supabase
         .from("zen_sessions")
@@ -183,7 +185,7 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
           .from("goals")
           .select("xp, max_xp, progress, title")
           .eq("id", selectedGoal)
-          .single()
+          .maybeSingle()
 
         if (goal) {
           const newGoalXp = (goal.xp || 0) + xpEarned
@@ -196,8 +198,6 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
               progress: newProgress,
             })
             .eq("id", selectedGoal)
-
-          console.log("[v0] Updated goal XP:", newGoalXp, "for goal:", selectedGoal)
 
           setXpToastData({
             xp: xpEarned,
@@ -216,7 +216,6 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
       }
 
       if (newLevel > currentProfile.level) {
-        console.log("[v0] User leveled up to level", newLevel)
         setTimeout(() => {
           setNewLevel(newLevel)
           setShowLevelUp(true)
@@ -224,8 +223,7 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
       }
     }
 
-    // Mark task as completed if linked
-    if (targetTask) {
+    if (selectedTask !== "none") {
       await supabase
         .from("tasks")
         .update({
@@ -233,10 +231,9 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
           completed: true,
           completed_at: new Date().toISOString(),
         })
-        .eq("id", targetTask.id)
+        .eq("id", selectedTask)
     }
 
-    // Reset for next session
     setSessionId(null)
     setTargetTask(null)
   }
@@ -246,14 +243,11 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
 
     setIsRunning(false)
     setIsFullscreen(false)
-
-    // Reset timer to default
     setMinutes(25)
     setSeconds(0)
     setInitialMinutes(25)
     setTimeLeft(25 * 60)
 
-    // Delete incomplete session
     if (sessionId) {
       const supabase = getSupabaseBrowserClient()
       await supabase.from("zen_sessions").delete().eq("id", sessionId)
@@ -268,34 +262,10 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
     })
   }
 
-  const handleReset = async () => {
-    if (sessionId && !isRunning) {
-      const supabase = getSupabaseBrowserClient()
-      await supabase.from("zen_sessions").delete().eq("id", sessionId)
-    }
-
-    setIsRunning(false)
-    setMinutes(25)
-    setSeconds(0)
-    setSessionId(null)
-    setSessionStartTime(null)
-    setTimeLeft(25 * 60)
-  }
-
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60)
     const secs = time % 60
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
-  }
-
-  const renderEnvironment = () => {
-    if (selectedEnvironment === "mountain") {
-      return <MountainEnvironment />
-    }
-    if (selectedEnvironment === "art-store") {
-      return <ArtStoreEnvironment />
-    }
-    return null
   }
 
   const startFocus = async () => {
@@ -306,17 +276,15 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
 
     if (!user) return
 
-    // Enter fullscreen mode
     setIsFullscreen(true)
     setIsRunning(true)
 
-    // Create session in database
     const { data: session, error } = await supabase
       .from("zen_sessions")
       .insert({
         user_id: user.id,
         duration_minutes: initialMinutes,
-        task_id: targetTask?.id || null,
+        task_id: selectedTask !== "none" ? selectedTask : null,
         started_at: new Date().toISOString(),
       })
       .select()
@@ -337,7 +305,6 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
         <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-purple-950 via-indigo-950 to-purple-900 flex items-center justify-center">
           <div className="w-full max-w-4xl px-8">
             <div className="flex flex-col items-center justify-center space-y-8">
-              {/* Large timer display */}
               <div className="relative w-96 h-96 flex items-center justify-center">
                 <svg className="absolute inset-0 w-full h-full -rotate-90">
                   <circle
@@ -373,13 +340,11 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
                 </div>
               </div>
 
-              {/* XP indicator */}
               <div className="flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full">
                 <span className="text-3xl">⚡</span>
                 <span className="text-xl font-bold text-yellow-400">Earning {Math.floor(initialMinutes * 5)} XP</span>
               </div>
 
-              {/* Give up button */}
               <Button
                 onClick={handleGiveUp}
                 variant="outline"
@@ -402,45 +367,47 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
 
           <Card className="p-8 bg-gradient-to-br from-purple-950/40 via-indigo-950/30 to-purple-900/40 border-purple-500/20">
             <div className="space-y-6">
-              {/* Goal Selection */}
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">
-                  Route XP to goal: <span className="text-xs">(Personal XP Only)</span>
-                </label>
-                <Select value={selectedGoal} onValueChange={setSelectedGoal}>
-                  <SelectTrigger className="bg-background/50 border-purple-500/30">
-                    <SelectValue placeholder="Select a goal" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Goal (Personal XP Only)</SelectItem>
-                    {goals.map((goal) => (
-                      <SelectItem key={goal.id} value={goal.id}>
-                        {goal.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">
+                    Route XP to goal: <span className="text-xs">(Personal XP Only)</span>
+                  </label>
+                  <Select value={selectedGoal} onValueChange={setSelectedGoal}>
+                    <SelectTrigger className="bg-background/50 border-purple-500/30">
+                      <SelectValue placeholder="Select a goal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Goal (Personal XP Only)</SelectItem>
+                      {goals.map((goal) => (
+                        <SelectItem key={goal.id} value={goal.id}>
+                          {goal.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Environment Selection */}
-              <div className="flex gap-2">
-                {environments.map((env) => (
-                  <Button
-                    key={env.id}
-                    variant={selectedEnvironment === env.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedEnvironment(env.id)}
-                    className="flex-1"
-                  >
-                    {env.name}
-                  </Button>
-                ))}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Select task:</label>
+                  <Select value={selectedTask} onValueChange={setSelectedTask}>
+                    <SelectTrigger className="bg-background/50 border-purple-500/30">
+                      <SelectValue placeholder="Select a task" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Task</SelectItem>
+                      {tasks.map((task) => (
+                        <SelectItem key={task.id} value={task.id}>
+                          {task.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="text-8xl font-bold text-foreground mb-6 tabular-nums">{formatTime(timeLeft)}</div>
 
-                {/* XP Badge */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 border border-amber-500/30 rounded-full mb-8">
                   <span className="text-amber-400">⚡</span>
                   <span className="font-semibold text-amber-300">+{Math.floor(initialMinutes * 5)} XP</span>
@@ -463,7 +430,6 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
                 )}
               </div>
 
-              {/* Timer presets */}
               <div className="grid grid-cols-4 gap-3">
                 {[
                   { minutes: 15, xp: 75 },
@@ -493,9 +459,8 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
         </div>
       )}
 
-      {/* Toasts and Celebrations */}
-      {showXPToast && <XpToast xp={xpToastData.xp} message={xpToastData.message} />}
-      {showLevelUp && <LevelUpCelebration level={newLevel} onClose={() => setShowLevelUp(false)} />}
+      {showXPToast && <XpToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
+      {showLevelUp && <LevelUpCelebration newLevel={newLevel} onClose={() => setShowLevelUp(false)} />}
     </>
   )
 }

@@ -14,6 +14,7 @@ interface NewTask {
   effort: "small" | "medium" | "large"
   linkedGoal: string
   tags: string[]
+  xp: number
 }
 
 interface TaskCreationModalProps {
@@ -32,6 +33,7 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
     effort: "medium",
     linkedGoal: "",
     tags: [],
+    xp: 3,
   })
   const [tagInput, setTagInput] = useState("")
   const [goals, setGoals] = useState<any[]>([])
@@ -70,7 +72,8 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
 
   const handleCreateTask = () => {
     if (!newTask.name.trim()) return
-    onCreateTask?.(newTask)
+    const taskToCreate = { ...newTask, xp: 3 }
+    onCreateTask?.(taskToCreate)
     resetForm()
     onClose()
   }
@@ -84,6 +87,7 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
       effort: "medium",
       linkedGoal: "",
       tags: [],
+      xp: 3,
     })
     setShowMoreOptions(false)
     setTagInput("")

@@ -134,7 +134,7 @@ export default function Page() {
       title: newTask.name,
       description: newTask.description,
       priority: newTask.priority,
-      xp: newTask.effort === "small" ? 50 : newTask.effort === "medium" ? 100 : 200,
+      xp: 3,
       due_date: newTask.when === "today" ? new Date().toISOString() : null,
       goal_id: newTask.linkedGoal || null,
       category: newTask.tags?.join(",") || null,
@@ -289,7 +289,7 @@ export default function Page() {
                                 }}
                               ></span>
                               <Zap className="w-4 h-4 relative z-10" />
-                              <span className="relative z-10">+{task.xp || 10} XP</span>
+                              <span className="relative z-10">+{task.xp || 3} XP</span>
                             </span>
                             {task.category && (
                               <span className="px-2 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-1 border border-emerald-500/30 shadow-sm">
