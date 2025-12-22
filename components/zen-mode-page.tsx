@@ -1,14 +1,13 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
-import { Play, Volume2, VolumeX } from "lucide-react"
+import { Play, Volume2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { XpToast } from "@/components/xp-toast"
-import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { useToast } from "@/components/ui/use-toast"
+import { Bird, Waves, CloudRain, Flame, Snowflake } from "lucide-react"
 
 interface Goal {
   id: string
@@ -26,6 +25,8 @@ interface Environment {
   name: string
   description: string
   background_value: string
+  file_type: string
+  media_type: string
 }
 
 interface Sound {
@@ -37,10 +38,13 @@ interface Sound {
 }
 
 interface ZenModePageProps {
+  onBack?: () => void
   taskId?: string | null
+  goalName?: string
+  goalId?: string | null
 }
 
-export default function ZenModePage({ taskId }: ZenModePageProps) {
+export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenModePageProps) {
   const [minutes, setMinutes] = useState(25)
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
@@ -66,10 +70,12 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
   const [activeEnvironment, setActiveEnvironment] = useState<Environment | null>(null)
   const [playingSounds, setPlayingSounds] = useState<Set<string>>(new Set())
   const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map())
+  const [soundVolumes, setSoundVolumes] = useState<Map<string, number>>(new Map())
   const { toast } = useToast()
   const [selectedSound, setSelectedSound] = useState<string | null>(null)
   const portalRoot = document.getElementById("portal-root")
   const [isMounted, setIsMounted] = useState(false)
+  const [mediaTab, setMediaTab] = useState<"static" | "animated" | "sounds">("animated")
 
   useEffect(() => {
     setIsMounted(true)
@@ -154,6 +160,8 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
       id: env.id,
       name: env.name,
       background_value: env.background_url,
+      file_type: env.file_type,
+      media_type: env.media_type,
     }))
     setEnvironments(mappedData)
   }
@@ -172,12 +180,12 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
     if (!error && data) {
       const mappedData = data.map((sound) => ({
         ...sound,
+        icon: sound.icon_name, // Map icon_name to icon
         file_url: sound.audio_url,
       }))
       setSounds(mappedData)
-      if (mappedData.length > 0 && !selectedSound) {
-        setSelectedSound(mappedData[0].id)
-      }
+    } else {
+      console.log("[v0] Error fetching sounds:", error)
     }
   }
 
@@ -380,21 +388,18 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
 
   const handleEnvironmentClick = (env: Environment) => {
     if (selectedEnvironment === env.id) {
-      // Clicking the same environment deselects it
       setSelectedEnvironment(null)
       setActiveEnvironment(null)
     } else {
-      // Clicking a different environment selects it
       setSelectedEnvironment(env.id)
       setActiveEnvironment(env)
     }
   }
 
-  const handleSoundClick = (sound: Sound) => {
+  const handleSoundClick = async (sound: Sound) => {
     const isPlaying = playingSounds.has(sound.id)
 
     if (isPlaying) {
-      // Stop the sound
       const audio = audioRefs.current.get(sound.id)
       if (audio) {
         audio.pause()
@@ -406,16 +411,60 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
         return newSet
       })
     } else {
-      // Play the sound
       let audio = audioRefs.current.get(sound.id)
+
+      // Create audio if it doesn't exist
       if (!audio) {
         audio = new Audio(sound.file_url)
         audio.loop = true
+        const volumePercent = soundVolumes.get(sound.id) ?? 50
+        audio.volume = volumePercent / 100
         audioRefs.current.set(sound.id, audio)
+
+        if (!soundVolumes.has(sound.id)) {
+          setSoundVolumes((prev) => new Map(prev).set(sound.id, 50))
+        }
+
+        // Wait for audio to be ready before playing
+        await new Promise<void>((resolve) => {
+          audio!.addEventListener("canplaythrough", () => resolve(), { once: true })
+          audio!.load()
+        }).catch(() => {
+          // Fallback if canplaythrough doesn't fire
+        })
       }
-      audio.play()
-      setPlayingSounds((prev) => new Set(prev).add(sound.id))
+
+      try {
+        // Ensure audio is not paused before playing
+        if (!audio.paused) {
+          audio.pause()
+          audio.currentTime = 0
+        }
+
+        await audio.play()
+        setPlayingSounds((prev) => new Set(prev).add(sound.id))
+        console.log("[v0] Audio playing successfully:", sound.name)
+      } catch (error: any) {
+        console.log("[v0] Audio play error:", error.message)
+
+        // Show user-friendly message only for autoplay restrictions
+        if (error.name === "NotAllowedError") {
+          toast({
+            title: "Audio blocked",
+            description: "Click the sound again to play it",
+            variant: "destructive",
+          })
+        }
+      }
     }
+  }
+
+  const handleVolumeChange = (soundId: string, volumePercent: number) => {
+    const audio = audioRefs.current.get(soundId)
+    if (audio) {
+      audio.volume = volumePercent / 100
+    }
+    setSoundVolumes((prev) => new Map(prev).set(soundId, volumePercent))
   }
 
   useEffect(() => {
@@ -427,11 +476,12 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
     }
   }, [])
 
+  const filteredEnvironments = environments.filter((env) => env.media_type === mediaTab)
+
   return (
     <>
-      {/* Regular zen mode UI */}
       {!isFullscreen && (
-        <div className="min-h-screen p-8">
+        <div className="min-h-screen p-8 bg-background">
           <div className="space-y-8">
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-2">Zen Mode</h2>
@@ -443,7 +493,7 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
                 activeEnvironment ? "bg-black/40 backdrop-blur-md border-white/20" : "bg-card"
               }`}
               style={
-                activeEnvironment?.background_value
+                activeEnvironment?.background_value && activeEnvironment?.file_type !== "mp4"
                   ? {
                       backgroundImage: `url(${activeEnvironment.background_value})`,
                       backgroundSize: "cover",
@@ -452,6 +502,16 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
                   : undefined
               }
             >
+              {activeEnvironment?.file_type === "mp4" && (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                  src={activeEnvironment.background_value || "/placeholder.svg"}
+                />
+              )}
               {activeEnvironment && <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />}
 
               <div className="relative z-10 space-y-6">
@@ -549,76 +609,138 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
               </div>
             </Card>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-foreground">Environments</h3>
-                <div className="grid grid-cols-3 gap-3">
-                  {environments.map((env) => (
-                    <Card
-                      key={env.id}
-                      className={`cursor-pointer transition-all hover:border-purple-500/50 overflow-hidden ${
-                        selectedEnvironment === env.id
-                          ? "border-purple-500 ring-2 ring-purple-500/20"
-                          : "border-border/50"
-                      }`}
-                      onClick={() => handleEnvironmentClick(env)}
-                    >
-                      <div className="aspect-video relative overflow-hidden bg-muted">
-                        {env.background_value ? (
-                          <img
-                            src={env.background_value || "/placeholder.svg"}
-                            alt={env.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.log("[v0] Failed to load image:", env.background_value)
-                              e.currentTarget.src = "/placeholder.svg?height=100&width=150"
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                            No preview
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <p className="text-xs font-medium text-foreground text-center truncate">{env.name}</p>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+            <Card className="p-6 border-purple-500/20">
+              <div className="flex gap-2 mb-6 border-b border-border/50">
+                <button
+                  onClick={() => setMediaTab("static")}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    mediaTab === "static"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Static
+                </button>
+                <button
+                  onClick={() => setMediaTab("animated")}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    mediaTab === "animated"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Animated
+                </button>
+                <button
+                  onClick={() => setMediaTab("sounds")}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    mediaTab === "sounds"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Sounds
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-foreground">Sounds</h3>
-                <div className="grid grid-cols-3 gap-3">
-                  {sounds.map((sound) => {
-                    const isPlaying = playingSounds.has(sound.id)
-                    return (
+              {mediaTab === "static" || mediaTab === "animated" ? (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">
+                    {mediaTab === "static" ? "Static Backgrounds" : "Animated Backgrounds"}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {filteredEnvironments.map((env) => (
+                      <Card
+                        key={env.id}
+                        className={`cursor-pointer transition-all hover:border-purple-500/50 overflow-hidden ${
+                          selectedEnvironment === env.id
+                            ? "border-purple-500 ring-2 ring-purple-500/20"
+                            : "border-border/50"
+                        }`}
+                        onClick={() => handleEnvironmentClick(env)}
+                      >
+                        <div className="aspect-video relative overflow-hidden bg-muted">
+                          {env.file_type === "mp4" ? (
+                            <video
+                              src={env.background_value}
+                              className="w-full h-full object-cover"
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              onError={() => {
+                                console.log("[v0] Failed to load video:", env.background_value)
+                              }}
+                            />
+                          ) : env.background_value ? (
+                            <img
+                              src={env.background_value || "/placeholder.svg"}
+                              alt={env.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log("[v0] Failed to load image:", env.background_value)
+                                e.currentTarget.src = "/placeholder.svg?height=100&width=150"
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                              No preview
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-2">
+                          <p className="text-xs font-medium text-foreground text-center truncate">{env.name}</p>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">Ambient Sounds</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {sounds.map((sound) => (
                       <Card
                         key={sound.id}
                         className={`cursor-pointer transition-all hover:border-purple-500/50 ${
-                          isPlaying
-                            ? "border-purple-500 ring-2 ring-purple-500/20 bg-purple-500/10"
+                          playingSounds.has(sound.id)
+                            ? "border-purple-500 ring-2 ring-purple-500/20 bg-purple-500/5"
                             : "border-border/50"
                         }`}
                         onClick={() => handleSoundClick(sound)}
                       >
-                        <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-purple-950/40 to-indigo-950/40">
-                          {isPlaying ? (
-                            <VolumeX className="w-8 h-8 text-purple-400 animate-pulse" />
-                          ) : (
-                            <Volume2 className="w-8 h-8 text-purple-400" />
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-center h-16">
+                            {sound.icon === "bird" && <Bird className="w-10 h-10 text-primary" />}
+                            {sound.icon === "waves" && <Waves className="w-10 h-10 text-primary" />}
+                            {sound.icon === "cloud-rain" && <CloudRain className="w-10 h-10 text-primary" />}
+                            {sound.icon === "flame" && <Flame className="w-10 h-10 text-primary" />}
+                            {sound.icon === "snowflake" && <Snowflake className="w-10 h-10 text-primary" />}
+                          </div>
+                          <p className="text-xs font-medium text-foreground text-center">{sound.name}</p>
+                          {playingSounds.has(sound.id) && (
+                            <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <Volume2 className="w-3 h-3" />
+                                <span>{soundVolumes.get(sound.id) || 50}%</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={soundVolumes.get(sound.id) || 50}
+                                onChange={(e) => handleVolumeChange(sound.id, Number.parseInt(e.target.value))}
+                                className="volume-slider w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer"
+                              />
+                            </div>
                           )}
                         </div>
-                        <div className="p-2">
-                          <p className="text-xs font-medium text-foreground text-center truncate">{sound.name}</p>
-                        </div>
                       </Card>
-                    )
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </Card>
           </div>
         </div>
       )}
@@ -626,17 +748,24 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
       {isFullscreen &&
         isMounted &&
         createPortal(
-          <div
-            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black"
-            style={{
-              backgroundImage: activeEnvironment?.background_value
-                ? `url(${activeEnvironment.background_value})`
-                : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
-            <div className="absolute inset-0 bg-black/40" />
+          <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
+            {activeEnvironment?.file_type === "mp4" ? (
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+                src={activeEnvironment.background_value}
+              />
+            ) : activeEnvironment?.background_value ? (
+              <div
+                className="absolute inset-0 w-full h-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${activeEnvironment.background_value})` }}
+              />
+            ) : null}
+
+            {activeEnvironment && <div className="absolute inset-0 bg-black/40" />}
 
             <div className="relative z-10 w-full max-w-4xl px-8">
               <div className="flex flex-col items-center justify-center space-y-8">
@@ -693,9 +822,6 @@ export default function ZenModePage({ taskId }: ZenModePageProps) {
           </div>,
           document.body,
         )}
-
-      {showXPToast && <XpToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
-      {showLevelUp && <LevelUpCelebration newLevel={newLevel} onClose={() => setShowLevelUp(false)} />}
     </>
   )
 }

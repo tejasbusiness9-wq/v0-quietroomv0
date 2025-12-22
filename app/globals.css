@@ -342,4 +342,61 @@
     animation: shimmer 3s linear infinite;
     background-size: 200% 100%;
   }
+
+  /* Custom volume slider styling with visual indicators */
+  /* Volume slider custom styling */
+  .volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 9999px;
+    outline: none;
+    color: bg-purple-100;
+  }
+
+  /* Slider thumb (the draggable circle) */
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgb(168 85 247);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+    transition: all 0.2s ease;
+  }
+
+  .volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgb(168 85 247);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+    transition: all 0.2s ease;
+  }
+
+  /* Hover effects for thumb */
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+  }
+
+  .volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+  }
+
+  /* Active state for thumb */
+  .volume-slider::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+    box-shadow: 0 0 16px rgba(168, 85, 247, 1);
+  }
+
+  .volume-slider::-moz-range-thumb:active {
+    transform: scale(1.1);
+    box-shadow: 0 0 16px rgba(168, 85, 247, 1);
+  }
 }
