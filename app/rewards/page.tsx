@@ -36,6 +36,7 @@ export default function RewardsPage() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
+  const [videoErrors, setVideoErrors] = useState<Set<string>>(new Set())
 
   const supabase = createBrowserClient()
 
@@ -182,6 +183,10 @@ export default function RewardsPage() {
     })
   }
 
+  const handleVideoError = (itemName: string, itemUrl: string, error: any) => {
+    setVideoErrors((prev) => new Set(prev).add(itemName))
+  }
+
   const getIconComponent = (iconName: string | null) => {
     const icons: Record<string, any> = {
       Video,
@@ -278,6 +283,8 @@ export default function RewardsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {systemItems.map((item) => {
               const Icon = getIconComponent(item.icon_name)
+              const hasVideoError = videoErrors.has(item.name)
+
               return (
                 <div
                   key={item.id}
@@ -288,9 +295,17 @@ export default function RewardsPage() {
                   {/* Media Preview */}
                   {item.media_url && (
                     <div className="relative h-48 bg-black/50 overflow-hidden">
-                      {item.media_type === "video" ? (
-                        <video src={item.media_url} autoPlay loop muted className="w-full h-full object-cover" />
-                      ) : item.media_type === "audio" ? (
+                      {item.media_type === "video" && !hasVideoError ? (
+                        <video
+                          src={item.media_url}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover"
+                          onError={(e) => handleVideoError(item.name, item.media_url!, e)}
+                        />
+                      ) : item.media_type === "audio" || (item.media_type === "video" && hasVideoError) ? (
                         <div className="flex items-center justify-center h-full bg-gradient-to-br from-cyan-900/50 to-purple-900/50">
                           <Icon className="w-20 h-20 text-cyan-400" />
                         </div>
@@ -388,6 +403,7 @@ export default function RewardsPage() {
 
                 const Icon = getIconComponent(rewardItem.icon_name)
                 const isSystem = rewardItem.category === "system"
+                const hasVideoError = videoErrors.has(rewardItem.name)
 
                 return (
                   <div
@@ -407,13 +423,15 @@ export default function RewardsPage() {
 
                     {rewardItem.media_url && (
                       <div className="relative h-32 bg-black/50 overflow-hidden">
-                        {rewardItem.media_type === "video" ? (
+                        {rewardItem.media_type === "video" && !hasVideoError ? (
                           <video
                             src={rewardItem.media_url}
                             autoPlay
                             loop
                             muted
+                            playsInline
                             className="w-full h-full object-cover"
+                            onError={(e) => handleVideoError(rewardItem.name, rewardItem.media_url!, e)}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full bg-gradient-to-br from-cyan-900/50 to-purple-900/50">

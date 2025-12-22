@@ -10,7 +10,7 @@ INSERT INTO system_sounds (
   'Underwater',
   'Calming underwater ambience with gentle bubbles',
   'waves',
-  'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/underwater-oU9HvPWFQlyfjaf1co6dKav4EJ2kEw.webm',
+  '/images/underwater.webm',
   'webm',
   'nature'
 );

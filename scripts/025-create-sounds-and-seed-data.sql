@@ -68,7 +68,7 @@ INSERT INTO system_sounds (
   'Forest Birds',
   'Peaceful chirping of birds in nature',
   'bird',
-  'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/birds-EVISQ2MjtEZAGDaJOktf6ewRiAqmY2.webm',
+  '/images/birds.webm',
   'webm',
   'nature'
 );

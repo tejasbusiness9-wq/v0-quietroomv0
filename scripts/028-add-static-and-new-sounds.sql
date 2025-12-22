@@ -50,12 +50,12 @@ INSERT INTO system_environments (name, description, background_url, file_type, m
 -- Insert animated environments  
 INSERT INTO system_environments (name, description, background_url, file_type, media_type, category) VALUES
 ('Mountains', 'Serene mountain waterfalls with mist', '/images/mountain.gif', 'gif', 'animated', 'nature'),
-('Cozy Room', 'Warm room with glowing lamp', 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/room%20%26%20lamp-b2ipygTmauIEMS1bXLkPfyGZ8KwDms.mp4', 'mp4', 'animated', 'indoor');
+('Cozy Room', 'Warm room with glowing lamp', '/images/room-lamp.mp4', 'mp4', 'animated', 'indoor');
 
 -- Insert all sounds with proper audio file paths
 INSERT INTO system_sounds (name, description, icon_name, audio_url, file_type, category) VALUES
-('Birds', 'Peaceful bird sounds', 'bird', 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/birds-EVISQ2MjtEZAGDaJOktf6ewRiAqmY2.webm', 'webm', 'nature'),
-('Underwater', 'Calm underwater ambience', 'waves', 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/underwater-oU9HvPWFQlyfjaf1co6dKav4EJ2kEw.webm', 'webm', 'water'),
-('Thunder & Rain', 'Relaxing thunderstorm', 'cloud-rain', 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/thunder%20and%20rain-yV7zixrxiHELm8OFLsYvzZMfqo7iUR.mp3', 'mp3', 'weather'),
+('Birds', 'Peaceful bird sounds', 'bird', '/images/birds.webm', 'webm', 'nature'),
+('Underwater', 'Calm underwater ambience', 'waves', '/images/underwater.webm', 'webm', 'water'),
+('Thunder & Rain', 'Relaxing thunderstorm', 'cloud-rain', '/images/thunder-rain.mp3', 'mp3', 'weather'),
 ('Fire', 'Crackling fireplace', 'flame', '/images/fire-sound.mp3', 'mp3', 'indoor'),
 ('Winter Storm', 'Howling wind and snow', 'snowflake', '/images/howling-winter-storm.mp3', 'mp3', 'weather');

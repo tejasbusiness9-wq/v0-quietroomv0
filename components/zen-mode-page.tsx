@@ -424,36 +424,37 @@ export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenMod
         if (!soundVolumes.has(sound.id)) {
           setSoundVolumes((prev) => new Map(prev).set(sound.id, 50))
         }
-
-        // Wait for audio to be ready before playing
-        await new Promise<void>((resolve) => {
-          audio!.addEventListener("canplaythrough", () => resolve(), { once: true })
-          audio!.load()
-        }).catch(() => {
-          // Fallback if canplaythrough doesn't fire
-        })
       }
 
       try {
-        // Ensure audio is not paused before playing
+        // Reset audio if it was previously playing
         if (!audio.paused) {
           audio.pause()
           audio.currentTime = 0
         }
 
-        await audio.play()
-        setPlayingSounds((prev) => new Set(prev).add(sound.id))
-        console.log("[v0] Audio playing successfully:", sound.name)
+        // Load and play - let browser handle loading
+        audio.load()
+        const playPromise = audio.play()
+
+        if (playPromise !== undefined) {
+          await playPromise
+          setPlayingSounds((prev) => new Set(prev).add(sound.id))
+          console.log("[v0] Audio playing successfully:", sound.name)
+        }
       } catch (error: any) {
         console.log("[v0] Audio play error:", error.message)
 
-        // Show user-friendly message only for autoplay restrictions
+        // Only show toast for actual autoplay restrictions
         if (error.name === "NotAllowedError") {
           toast({
             title: "Audio blocked",
-            description: "Click the sound again to play it",
+            description: "Browser blocked autoplay. Click again to play.",
             variant: "destructive",
           })
+        } else {
+          // For other errors, just log and don't update state
+          console.error("[v0] Audio error details:", error)
         }
       }
     }

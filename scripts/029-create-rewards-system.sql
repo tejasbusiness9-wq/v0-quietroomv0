@@ -23,12 +23,15 @@ CREATE POLICY "Anyone can view rewards items"
   TO public
   USING (true);
 
+-- Delete all existing rewards items to prevent duplicates on re-run
+DELETE FROM rewards_items;
+
 -- Insert rewards items
 INSERT INTO rewards_items (name, description, category, type, price, media_url, media_type, icon_name) VALUES
 -- System Shop Items
 ('Ramen Shop', 'Cozy animated ramen shop environment', 'system', 'environment', 500, '/images/ramen-shop.mp4', 'video', 'Video'),
 ('Art Store', 'Creative art store atmosphere', 'system', 'environment', 500, '/images/art-store.mp4', 'video', 'Palette'),
-('Fire Sounds', 'Crackling fireplace ambiance', 'system', 'sound', 200, '/images/fire-sound.mp3', 'audio', 'Flame'),
+('Fire Sounds', 'Crackling fireplace ambiance', 'system', 'sound', 50, '/images/fire-sound.mp3', 'audio', 'Flame'),
 
 -- Bounty Board Items (Real Life Permissions)
 ('1 Hour Gaming', 'Permission to game for 1 hour', 'bounty', 'permission', 300, NULL, NULL, 'Gamepad2'),
