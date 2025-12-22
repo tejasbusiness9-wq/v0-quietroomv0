@@ -28,6 +28,7 @@ import TasksPage from "@/app/tasks/page"
 import ProfilePage from "@/app/profile/page"
 import TalkToQPage from "@/app/talk-to-q/page"
 import LeaderboardPage from "./leaderboard/page"
+import RewardsPage from "@/app/rewards/page" // Added RewardsPage import
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -36,7 +37,16 @@ import { XpToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { getLevelInfo } from "@/lib/leveling-system"
 
-type PageType = "dashboard" | "goals" | "tasks" | "leaderboard" | "zen-mode" | "talk-to-q" | "community" | "profile"
+type PageType =
+  | "dashboard"
+  | "goals"
+  | "tasks"
+  | "leaderboard"
+  | "zen-mode"
+  | "talk-to-q"
+  | "community"
+  | "profile"
+  | "rewards" // Added 'rewards' to PageType
 
 const NavItem = memo(({ item, isActive, onClick }: any) => {
   const Icon = item.icon
@@ -401,6 +411,8 @@ export default function Home() {
         return <ComingSoonBanner />
       case "profile":
         return <ProfilePage profileData={profileData} profileStats={profileStats} />
+      case "rewards":
+        return <RewardsPage /> // Added rewards case
       default:
         return (
           <div className="mb-8">
@@ -488,6 +500,11 @@ export default function Home() {
     { id: "community", label: "Community", icon: Users },
   ] as const
 
+  const userItems = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "rewards", label: "Rewards", icon: Gift }, // Added Rewards navigation
+  ] as const
+
   if (isLoadingUser) {
     return (
       <div className="dark min-h-screen bg-background flex items-center justify-center">
@@ -544,25 +561,14 @@ export default function Home() {
             <div className="p-3 mt-auto border-t border-sidebar-border">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">You</h2>
               <ul className="space-y-1">
-                <li>
-                  <button
-                    onClick={() => handlePageChange("profile")}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                      currentPage === "profile"
-                        ? "nav-item-active"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <User className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium">Profile</span>
-                  </button>
-                </li>
-                <li>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                    <Gift className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm font-medium">Rewards</span>
-                  </button>
-                </li>
+                {userItems.map((item) => (
+                  <NavItem
+                    key={item.id}
+                    item={item}
+                    isActive={currentPage === item.id}
+                    onClick={() => handlePageChange(item.id as PageType)}
+                  />
+                ))}
                 <li>
                   <button
                     onClick={handleSignOut}
