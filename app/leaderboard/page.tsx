@@ -14,12 +14,17 @@ interface LeaderboardEntry {
   total_xp: number
   avatar_url: string | null
   user_class: string
+  rank: number
+  can_claim_aura: boolean
+  claimable_aura: number
+  last_aura_claim_at: string | null
 }
 
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [claiming, setClaiming] = useState(false)
 
   useEffect(() => {
     fetchLeaderboard()
@@ -29,22 +34,47 @@ export default function LeaderboardPage() {
     setLoading(true)
     const supabase = getSupabaseBrowserClient()
 
-    // Get current user
     const {
       data: { user },
     } = await supabase.auth.getUser()
     setCurrentUserId(user?.id || null)
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, user_id, username, display_name, level, total_xp, avatar_url, user_class")
-      .order("total_xp", { ascending: false })
-      .limit(100)
+    const { data, error } = await supabase.rpc("get_leaderboard_with_aura", {})
 
     console.log("[v0] Leaderboard query result:", { data, error, count: data?.length })
 
     if (error) {
       console.error("[v0] Error fetching leaderboard:", error)
+      // Fallback to basic query if RPC doesn't exist yet
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name, level, total_xp, avatar_url, user_class, aura, last_aura_claim_at")
+        .order("total_xp", { ascending: false })
+        .limit(100)
+
+      if (fallbackError) {
+        console.error("[v0] Fallback query error:", fallbackError)
+      } else {
+        // Calculate ranks and eligibility client-side
+        const enrichedData = (fallbackData || []).map((entry, index) => {
+          const rank = index + 1
+          const canClaim =
+            !entry.last_aura_claim_at || new Date(entry.last_aura_claim_at).getTime() < Date.now() - 24 * 60 * 60 * 1000
+
+          let claimableAura = 0
+          if (rank >= 1 && rank <= 10) claimableAura = 100
+          else if (rank >= 11 && rank <= 50) claimableAura = 50
+          else if (rank >= 51 && rank <= 100) claimableAura = 20
+
+          return {
+            ...entry,
+            rank,
+            can_claim_aura: canClaim,
+            claimable_aura: claimableAura,
+          }
+        })
+        setLeaderboard(enrichedData)
+      }
     } else {
       setLeaderboard(data || [])
     }
@@ -85,6 +115,50 @@ export default function LeaderboardPage() {
     return "bg-card border border-border hover:border-primary/30"
   }
 
+  const handleClaimAura = async (entry: LeaderboardEntry) => {
+    if (!entry.can_claim_aura || claiming) return
+
+    setClaiming(true)
+    const supabase = getSupabaseBrowserClient()
+
+    try {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          aura: entry.claimable_aura,
+          last_aura_claim_at: new Date().toISOString(),
+        })
+        .eq("user_id", entry.user_id)
+
+      if (updateError) throw updateError
+
+      await fetchLeaderboard()
+
+      alert(`Claimed ${entry.claimable_aura} Aura! Come back in 24 hours.`)
+    } catch (error) {
+      console.error("[v0] Error claiming aura:", error)
+      alert("Failed to claim Aura. Please try again.")
+    } finally {
+      setClaiming(false)
+    }
+  }
+
+  const getTimeUntilNextClaim = (lastClaimAt: string | null) => {
+    if (!lastClaimAt) return null
+
+    const lastClaim = new Date(lastClaimAt)
+    const nextClaim = new Date(lastClaim.getTime() + 24 * 60 * 60 * 1000)
+    const now = new Date()
+
+    if (now >= nextClaim) return null
+
+    const diff = nextClaim.getTime() - now.getTime()
+    const hours = Math.floor(diff / (60 * 60 * 1000))
+    const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000))
+
+    return `${hours}h ${minutes}m`
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
@@ -102,6 +176,13 @@ export default function LeaderboardPage() {
           <h2 className="text-4xl font-bold text-primary">Leaderboard</h2>
         </div>
         <p className="text-muted-foreground">Top players ranked by total XP earned</p>
+        <div className="mt-4 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+          <p className="text-sm text-primary font-semibold mb-1">Daily Aura Rewards</p>
+          <p className="text-xs text-muted-foreground">
+            Rank 1-10: 100 Aura • Rank 11-50: 50 Aura • Rank 51-100: 20 Aura
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">Claim once every 24 hours based on your rank</p>
+        </div>
       </div>
 
       {leaderboard.length === 0 ? (
@@ -114,32 +195,32 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {leaderboard.map((entry, index) => {
-            const rank = index + 1
+          {leaderboard.map((entry) => {
             const isCurrentUser = entry.user_id === currentUserId
+            const timeUntilClaim = getTimeUntilNextClaim(entry.last_aura_claim_at)
 
             return (
               <div
-                key={entry.id}
+                key={entry.user_id}
                 className={`
                   rounded-xl p-5 transition-all duration-300
                   hover:scale-[1.02]
-                  ${getCardStyle(rank, isCurrentUser)}
+                  ${getCardStyle(entry.rank, isCurrentUser)}
                 `}
               >
-                {rank === 1 && (
+                {entry.rank === 1 && (
                   <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-shimmer" />
                   </div>
                 )}
 
                 <div className="flex items-center gap-4 relative z-10">
-                  <div className="flex-shrink-0">{getRankBadge(rank)}</div>
+                  <div className="flex-shrink-0">{getRankBadge(entry.rank)}</div>
 
                   <div className="flex-shrink-0">
                     <div
                       className={`w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-2xl font-bold ${
-                        rank === 1 ? "ring-4 ring-primary/50" : ""
+                        entry.rank === 1 ? "ring-4 ring-primary/50" : ""
                       }`}
                     >
                       {entry.avatar_url ? (
@@ -164,7 +245,7 @@ export default function LeaderboardPage() {
                           You
                         </span>
                       )}
-                      {rank === 1 && (
+                      {entry.rank === 1 && (
                         <span className="px-2 py-0.5 text-xs bg-primary/20 text-primary rounded-full font-semibold">
                           Champion
                         </span>
@@ -189,6 +270,26 @@ export default function LeaderboardPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">Level</p>
                     </div>
+
+                    {isCurrentUser && entry.claimable_aura > 0 && (
+                      <div className="text-right">
+                        {entry.can_claim_aura ? (
+                          <button
+                            onClick={() => handleClaimAura(entry)}
+                            disabled={claiming}
+                            className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <img src="/images/aura.png" alt="Aura" className="w-4 h-4" />
+                            <span>Claim {entry.claimable_aura}</span>
+                          </button>
+                        ) : (
+                          <div className="px-4 py-2 bg-muted border border-border rounded-lg">
+                            <p className="text-xs text-muted-foreground">Next claim in</p>
+                            <p className="text-sm font-semibold text-foreground">{timeUntilClaim}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

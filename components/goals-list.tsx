@@ -13,6 +13,7 @@ interface Goal {
   timeline: string
   target_date?: string
   status: string
+  target_hours?: number // Added target_hours field
 }
 
 interface GoalsListProps {
@@ -81,6 +82,8 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
 
   const GoalCard = ({ goal }: { goal: Goal }) => {
     const daysRemaining = getDaysRemaining(goal.target_date)
+    const estimatedHours = goal.target_hours || Math.ceil(goal.max_xp / 300)
+    const estimatedAura = estimatedHours * 10
 
     return (
       <button
@@ -106,9 +109,15 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
               style={{ width: `${goal.progress}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            {goal.xp} / {goal.max_xp} XP
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {goal.xp} / {goal.max_xp} XP
+            </p>
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full">
+              <img src="/images/aura.png" alt="Aura" className="w-3 h-3" />
+              <span className="text-xs font-semibold text-purple-400">~{estimatedAura}</span>
+            </div>
+          </div>
         </div>
       </button>
     )

@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { Bird, Waves, CloudRain, Flame, Snowflake } from "lucide-react"
+import { AuraToast } from "@/components/aura-toast"
+import { XPToast } from "@/components/xp-toast"
+import { LevelUpCelebration } from "@/components/level-up-celebration"
 
 interface Goal {
   id: string
@@ -38,13 +41,13 @@ interface Sound {
 }
 
 interface ZenModePageProps {
-  onBack?: () => void
+  onNavigate?: () => void
   taskId?: string | null
   goalName?: string
   goalId?: string | null
 }
 
-export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenModePageProps) {
+export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: ZenModePageProps) {
   const [minutes, setMinutes] = useState(25)
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
@@ -76,6 +79,8 @@ export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenMod
   const portalRoot = document.getElementById("portal-root")
   const [isMounted, setIsMounted] = useState(false)
   const [mediaTab, setMediaTab] = useState<"static" | "animated" | "sounds">("animated")
+  const [showAuraToast, setShowAuraToast] = useState(false)
+  const [auraToastData, setAuraToastData] = useState({ aura: 0, message: "" })
 
   useEffect(() => {
     setIsMounted(true)
@@ -223,6 +228,7 @@ export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenMod
     if (!user) return
 
     const xpEarned = Math.floor(initialMinutes * 5)
+    const auraEarned = Math.floor(initialMinutes / 5)
 
     const { data: currentProfile } = await supabase
       .from("profiles")
@@ -244,7 +250,9 @@ export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenMod
         newXPToNextLevel = Math.floor(150 * Math.pow(1.15, newLevel - 1))
       }
 
-      const newAura = currentProfile.aura + levelsGained * 50
+      const levelUpAura = levelsGained * 50
+      const totalAuraGained = auraEarned + levelUpAura
+      const newAura = currentProfile.aura + totalAuraGained
 
       await supabase
         .from("profiles")
@@ -300,6 +308,21 @@ export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenMod
         })
         setShowXPToast(true)
         setTimeout(() => setShowXPToast(false), 3000)
+      }
+
+      if (totalAuraGained > 0) {
+        setTimeout(() => {
+          const messages = []
+          if (auraEarned > 0) messages.push(`${auraEarned} from session`)
+          if (levelUpAura > 0) messages.push(`${levelUpAura} from level up`)
+
+          setAuraToastData({
+            aura: totalAuraGained,
+            message: messages.join(" + "),
+          })
+          setShowAuraToast(true)
+          setTimeout(() => setShowAuraToast(false), 3000)
+        }, 1000)
       }
 
       if (newLevel > currentProfile.level) {
@@ -481,6 +504,10 @@ export default function ZenModePage({ onBack, taskId, goalName, goalId }: ZenMod
 
   return (
     <>
+      {showXPToast && <XPToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
+      {showAuraToast && <AuraToast auraAmount={auraToastData.aura} message={auraToastData.message} />}
+      {showLevelUp && <LevelUpCelebration newLevel={newLevel} onClose={() => setShowLevelUp(false)} />}
+
       {!isFullscreen && (
         <div className="min-h-screen p-8 bg-background">
           <div className="space-y-8">
