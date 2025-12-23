@@ -16,5 +16,5 @@ SET media_url = '/images/art-store.mp4'
 WHERE name = 'Art Store';
 
 UPDATE rewards_items 
-SET media_url = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire%20sound-EFz9HdERrwtJKynZLk9nTcFYOWW3sC.mp3'
+SET media_url = '/images/fire-20sound.mp3'
 WHERE name = 'Fire Sound';
