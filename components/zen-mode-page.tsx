@@ -275,6 +275,35 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
         })
         .eq("id", sessionId)
 
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        activity_type: "zen_session",
+        related_id: sessionId,
+        xp_earned: xpEarned,
+        metadata: {
+          minutes: initialMinutes,
+          aura_earned: auraEarned,
+        },
+      })
+
+      if (levelsGained > 0) {
+        const levelUpPromises = []
+        for (let i = 0; i < levelsGained; i++) {
+          levelUpPromises.push(
+            supabase.from("activity_log").insert({
+              user_id: user.id,
+              activity_type: "level_up",
+              xp_earned: 0,
+              metadata: {
+                new_level: currentProfile.level + i + 1,
+                aura_earned: 50,
+              },
+            }),
+          )
+        }
+        await Promise.all(levelUpPromises)
+      }
+
       if (selectedGoal !== "none") {
         const { data: goal } = await supabase
           .from("goals")

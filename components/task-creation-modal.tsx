@@ -135,12 +135,16 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Task name <span className="text-red-400">*</span>
+              <span className={`ml-2 text-xs ${newTask.name.length > 60 ? "text-red-400" : "text-muted-foreground"}`}>
+                ({newTask.name.length}/60)
+              </span>
             </label>
             <input
               type="text"
               value={newTask.name}
               onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
               placeholder="Enter your task..."
+              maxLength={60}
               className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -181,12 +185,22 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
             <div className="space-y-5 pt-2 border-t border-border animate-in slide-in-from-top-2">
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Description</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Description
+                  <span
+                    className={`ml-2 text-xs ${
+                      newTask.description.length > 200 ? "text-red-400" : "text-muted-foreground"
+                    }`}
+                  >
+                    ({newTask.description.length}/200)
+                  </span>
+                </label>
                 <textarea
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                   placeholder="Add details about this task..."
                   rows={3}
+                  maxLength={200}
                   className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
@@ -282,7 +296,7 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
         <div className="p-6 border-t border-border">
           <button
             onClick={handleCreateTask}
-            disabled={!newTask.name.trim()}
+            disabled={!newTask.name.trim() || newTask.name.length > 60 || newTask.description.length > 200}
             className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create Task

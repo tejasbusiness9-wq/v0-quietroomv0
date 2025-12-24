@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, Calendar, Target, Zap } from "lucide-react"
+import { Plus, Calendar, Target, Zap, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
@@ -28,6 +28,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   const [xpToastData, setXpToastData] = useState({ xp: 0, message: "" })
   const [showLevelUp, setShowLevelUp] = useState(false)
   const [newLevel, setNewLevel] = useState(0)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   useEffect(() => {
     fetchTasks()
@@ -123,13 +124,24 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
     if (!user) return
 
+    let dueDate = null
+    if (newTask.when === "today") {
+      dueDate = new Date().toISOString()
+    } else if (newTask.when === "this-week") {
+      // Set due date to 3 days from now (middle of the week)
+      const threeDaysFromNow = new Date()
+      threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
+      dueDate = threeDaysFromNow.toISOString()
+    }
+    // For "someday", dueDate remains null
+
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
       title: newTask.name,
       description: newTask.description,
       priority: newTask.priority,
       xp: 3,
-      due_date: newTask.when === "today" ? new Date().toISOString() : null,
+      due_date: dueDate,
       goal_id: newTask.linkedGoal || null,
       category: newTask.tags?.join(",") || null,
       completed: false,
@@ -181,22 +193,36 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     someday: tasks.filter((t) => !t.due_date && !t.completed),
   }
 
+  const truncateText = (text: string, limit = 30) => {
+    if (text.length <= limit) return text
+    return text.substring(0, limit) + "..."
+  }
+
   const TaskCard = ({ task }: { task: Task }) => (
     <div
-      className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 ${
+      className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 cursor-pointer ${
         task.completed ? "opacity-50" : ""
       }`}
+      onClick={() => setSelectedTask(task)}
     >
       <div className="flex items-start gap-4">
         <input
           type="checkbox"
           checked={task.completed}
-          onChange={() => toggleComplete(task.id, task.completed)}
+          onChange={(e) => {
+            e.stopPropagation()
+            toggleComplete(task.id, task.completed)
+          }}
+          onClick={(e) => e.stopPropagation()}
           className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary"
         />
-        <div className="flex-1">
-          <h3 className={`font-semibold text-foreground mb-2 ${task.completed ? "line-through" : ""}`}>{task.title}</h3>
-          {task.description && <p className="text-sm text-muted-foreground mb-2">{task.description}</p>}
+        <div className="flex-1 min-w-0">
+          <h3 className={`font-semibold text-foreground mb-2 ${task.completed ? "line-through" : ""}`}>
+            {truncateText(task.title, 30)}
+          </h3>
+          {task.description && (
+            <p className="text-sm text-muted-foreground mb-2">{truncateText(task.description, 30)}</p>
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getPriorityColor(task.priority)}`}>
               {task.priority}
@@ -227,11 +253,14 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
         </div>
         {!task.completed && (
           <button
-            onClick={() => handleFocusTask(task.id)}
-            className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleFocusTask(task.id)
+            }}
+            className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
           >
-            <Zap className="w-4 h-4" />
-            Focus Now
+            <Zap className="w-5 h-5" />
+            Start Focus Session
           </button>
         )}
       </div>
@@ -273,8 +302,8 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
           <p className="text-3xl font-bold text-accent">{tasksByWhen["this-week"].length}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground mb-1">Completed</p>
-          <p className="text-3xl font-bold text-green-400">{tasks.filter((t) => t.completed).length}</p>
+          <p className="text-sm text-muted-foreground mb-1">Someday</p>
+          <p className="text-3xl font-bold text-purple-400">{tasksByWhen.someday.length}</p>
         </div>
       </div>
 
@@ -330,6 +359,97 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
                 <p className="text-muted-foreground text-center py-8">No tasks for someday</p>
               ) : (
                 tasksByWhen.someday.map((task) => <TaskCard key={task.id} task={task} />)
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedTask(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <input
+                  type="checkbox"
+                  checked={selectedTask.completed}
+                  onChange={() => {
+                    toggleComplete(selectedTask.id, selectedTask.completed)
+                    setSelectedTask(null)
+                  }}
+                  className="w-6 h-6 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <h2
+                    className={`text-2xl font-bold text-foreground mb-2 break-all ${selectedTask.completed ? "line-through" : ""}`}
+                  >
+                    {selectedTask.title}
+                  </h2>
+                  {selectedTask.description && (
+                    <p className="text-muted-foreground leading-relaxed mb-4 break-words whitespace-pre-wrap">
+                      {selectedTask.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="ml-4 p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <div
+                  className={`px-4 py-2 text-sm font-semibold rounded-full border ${getPriorityColor(selectedTask.priority)}`}
+                >
+                  Priority: {selectedTask.priority}
+                </div>
+                <div className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-white rounded-full shadow-lg flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  <span className="font-bold">+{selectedTask.xp || 3} XP</span>
+                </div>
+                {selectedTask.category && (
+                  <div className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-2 border border-emerald-500/30">
+                    <Zap className="w-4 h-4" />#{selectedTask.category}
+                  </div>
+                )}
+              </div>
+
+              {selectedTask.due_date && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  Due: {new Date(selectedTask.due_date).toLocaleDateString()}
+                </div>
+              )}
+
+              {selectedTask.goal_id && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg">
+                  <Target className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-primary font-semibold">Linked to a goal</span>
+                </div>
+              )}
+
+              {!selectedTask.completed && (
+                <button
+                  onClick={() => {
+                    handleFocusTask(selectedTask.id)
+                    setSelectedTask(null)
+                  }}
+                  className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                >
+                  <Zap className="w-5 h-5" />
+                  Start Focus Session
+                </button>
               )}
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, X, Calendar, Zap, Target } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
@@ -13,7 +13,9 @@ interface Goal {
   timeline: string
   target_date?: string
   status: string
-  target_hours?: number // Added target_hours field
+  target_hours?: number
+  description?: string
+  motivation?: string
 }
 
 interface GoalsListProps {
@@ -29,6 +31,7 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     monthly: true,
     yearly: false,
   })
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
 
   useEffect(() => {
     fetchGoals()
@@ -80,6 +83,11 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     return diff > 0 ? diff : 0
   }
 
+  const truncateText = (text: string, limit = 30) => {
+    if (text.length <= limit) return text
+    return text.substring(0, limit) + "..."
+  }
+
   const GoalCard = ({ goal }: { goal: Goal }) => {
     const daysRemaining = getDaysRemaining(goal.target_date)
     const estimatedHours = goal.target_hours || Math.ceil(goal.max_xp / 300)
@@ -87,12 +95,12 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
 
     return (
       <button
-        onClick={() => onGoalSelect?.(goal.id)}
+        onClick={() => setSelectedGoal(goal)}
         className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors text-left group w-full"
       >
         <div className="flex items-start justify-between mb-3">
           <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors flex-1">
-            {goal.title}
+            {truncateText(goal.title, 30)}
           </h4>
           {daysRemaining !== undefined && (
             <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">{daysRemaining} days left</span>
@@ -114,7 +122,7 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
               {goal.xp} / {goal.max_xp} XP
             </p>
             <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full">
-              <img src="/images/aura.png" alt="Aura" className="w-3 h-3" />
+              <img src="/images/aura.jpg" alt="Aura" className="w-3 h-3 rounded-full" />
               <span className="text-xs font-semibold text-purple-400">~{estimatedAura}</span>
             </div>
           </div>
@@ -240,6 +248,123 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg mb-2">Your Quest Log is empty</p>
           <p className="text-sm text-muted-foreground">Start a new campaign by creating your first goal</p>
+        </div>
+      )}
+
+      {/* Goal Detail Modal */}
+      {selectedGoal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedGoal(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1 pr-4">
+                <h2 className="text-2xl font-bold text-foreground mb-2 break-all">{selectedGoal.title}</h2>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      selectedGoal.timeline === "daily"
+                        ? "bg-green-500"
+                        : selectedGoal.timeline === "weekly"
+                          ? "bg-blue-500"
+                          : selectedGoal.timeline === "monthly"
+                            ? "bg-purple-500"
+                            : "bg-amber-500"
+                    }`}
+                  />
+                  <span className="capitalize">{selectedGoal.timeline} Goal</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedGoal(null)}
+                className="ml-4 p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Description Section */}
+              {selectedGoal.description && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">Description</h3>
+                  <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                    {selectedGoal.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Motivation Section */}
+              {selectedGoal.motivation && (
+                <div className="space-y-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-4 border border-purple-500/30">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Target className="w-4 h-4 text-purple-400" />
+                    Why does this matter?
+                  </h3>
+                  <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                    {selectedGoal.motivation}
+                  </p>
+                </div>
+              )}
+
+              {/* Progress Section */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Progress</span>
+                  <span className="text-2xl font-bold text-primary">{selectedGoal.progress}%</span>
+                </div>
+                <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary/60 rounded-full transition-all duration-300 shadow-lg"
+                    style={{ width: `${selectedGoal.progress}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{selectedGoal.xp} XP earned</span>
+                  <span className="text-muted-foreground">{selectedGoal.max_xp} XP total</span>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-muted/50 rounded-lg p-4 border border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-yellow-500" />
+                    <span className="text-xs text-muted-foreground">XP Reward</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{selectedGoal.max_xp} XP</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-4 border border-purple-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src="/images/aura.jpg" alt="Aura" className="w-4 h-4 rounded-full" />
+                    <span className="text-xs text-muted-foreground">Aura Reward</span>
+                  </div>
+                  <p className="text-xl font-bold text-purple-400">
+                    ~{(selectedGoal.target_hours || Math.ceil(selectedGoal.max_xp / 300)) * 10}
+                  </p>
+                </div>
+              </div>
+
+              {/* Timeline Info */}
+              {selectedGoal.target_date && (
+                <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-foreground">Target Date</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(selectedGoal.target_date).toLocaleDateString()}
+                      <span className="ml-2">({getDaysRemaining(selectedGoal.target_date)} days remaining)</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

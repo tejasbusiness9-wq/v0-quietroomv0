@@ -14,6 +14,7 @@ import {
   LogOut,
   Plus,
   Calendar,
+  X,
 } from "lucide-react"
 import { useState, useRef, memo, useEffect } from "react"
 import { StatsSection } from "@/components/stats-section"
@@ -94,6 +95,7 @@ export default function Home() {
 
   const [profileData, setProfileData] = useState<any>(null)
   const [profileStats, setProfileStats] = useState<any>(null)
+  const [selectedTask, setSelectedTask] = useState<any | null>(null)
 
   useEffect(() => {
     fetchProfileData()
@@ -138,12 +140,38 @@ export default function Home() {
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    let timeoutId: NodeJS.Timeout | null = null
+
+    timeoutId = setTimeout(() => {
+      if (isLoadingUser) {
+        console.error("[v0] Auth initialization timeout - forcing load")
+        setIsLoadingUser(false)
+      }
+    }, 5000)
+
+    const fetchUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
+
+      if (error) {
+        console.error("[v0] Auth error:", error)
+      }
+
       setUser(user)
       setIsLoadingUser(false)
+      clearTimeout(timeoutId)
+
       if (user) {
         fetchTodaysTasks(user.id)
       }
+    }
+
+    fetchUser().catch((error) => {
+      console.error("[v0] Auth fetch failed:", error)
+      setIsLoadingUser(false)
+      clearTimeout(timeoutId)
     })
 
     const {
@@ -155,7 +183,12 @@ export default function Home() {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
   }, [supabase])
 
   const fetchTodaysTasks = async (userId: string) => {
@@ -180,13 +213,24 @@ export default function Home() {
   const handleCreateTask = async (newTask: any) => {
     if (!user) return
 
+    let dueDate = null
+    if (newTask.when === "today") {
+      dueDate = new Date().toISOString()
+    } else if (newTask.when === "this-week") {
+      // Set due date to 3 days from now (middle of the week)
+      const threeDaysFromNow = new Date()
+      threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
+      dueDate = threeDaysFromNow.toISOString()
+    }
+    // For "someday", dueDate remains null
+
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
       title: newTask.name,
       description: newTask.description,
       priority: newTask.priority,
       xp: 3,
-      due_date: newTask.when === "today" ? new Date().toISOString() : null,
+      due_date: dueDate,
       goal_id: newTask.linkedGoal || null,
       category: newTask.tags?.join(",") || null,
       completed: false,
@@ -295,7 +339,8 @@ export default function Home() {
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 ${
+                      onClick={() => setSelectedTask(task)}
+                      className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 cursor-pointer ${
                         task.completed ? "opacity-50" : ""
                       }`}
                     >
@@ -303,14 +348,25 @@ export default function Home() {
                         <input
                           type="checkbox"
                           checked={task.completed}
-                          onChange={() => toggleTaskComplete(task.id, task.completed)}
-                          className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary"
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            toggleTaskComplete(task.id, task.completed)
+                          }}
+                          className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
                         />
-                        <div className="flex-1">
-                          <h3 className={`font-semibold text-foreground mb-2 ${task.completed ? "line-through" : ""}`}>
-                            {task.title}
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            className={`font-semibold text-foreground mb-2 break-words ${
+                              task.completed ? "line-through" : ""
+                            }`}
+                          >
+                            {task.title.length > 30 ? `${task.title.slice(0, 30)}...` : task.title}
                           </h3>
-                          {task.description && <p className="text-sm text-muted-foreground mb-2">{task.description}</p>}
+                          {task.description && (
+                            <p className="text-sm text-muted-foreground mb-2 break-words">
+                              {task.description.length > 30 ? `${task.description.slice(0, 30)}...` : task.description}
+                            </p>
+                          )}
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
                               className={`px-2 py-1 text-xs font-semibold rounded-full border ${
@@ -349,7 +405,8 @@ export default function Home() {
                         </div>
                         {!task.completed && (
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation()
                               setZenModeTaskId(task.id)
                               setCurrentPage("zen-mode")
                             }}
@@ -399,6 +456,7 @@ export default function Home() {
               setZenModeTaskId(taskId)
               setCurrentPage("zen-mode")
             }}
+            onTaskSelect={(task) => setSelectedTask(task)}
           />
         )
       case "zen-mode":
@@ -483,6 +541,11 @@ export default function Home() {
     setIsGoalDetailOpen(true)
   }
 
+  const handleFocusTask = (taskId: string) => {
+    setZenModeTaskId(taskId)
+    setCurrentPage("zen-mode")
+  }
+
   const userLevel = profileData?.level || 18
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player"
   const userClass = getLevelInfo(userLevel).name
@@ -504,6 +567,12 @@ export default function Home() {
     { id: "profile", label: "Profile", icon: User },
     { id: "rewards", label: "Rewards", icon: Gift }, // Added Rewards navigation
   ] as const
+
+  useEffect(() => {
+    if (user && currentPage === "dashboard") {
+      fetchTodaysTasks(user.id)
+    }
+  }, [user, currentPage])
 
   if (isLoadingUser) {
     return (
@@ -651,6 +720,103 @@ export default function Home() {
         {showXPToast && <XpToast xp={xpToastData.xp} message={xpToastData.message} />}
         {showLevelUp && <LevelUpCelebration level={newLevel} />}
       </div>
+      {selectedTask && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedTask(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <input
+                  type="checkbox"
+                  checked={selectedTask.completed}
+                  onChange={() => {
+                    toggleTaskComplete(selectedTask.id, selectedTask.completed)
+                    setSelectedTask(null)
+                  }}
+                  className="w-6 h-6 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <h2
+                    className={`text-2xl font-bold text-foreground mb-2 break-all ${
+                      selectedTask.completed ? "line-through" : ""
+                    }`}
+                  >
+                    {selectedTask.title}
+                  </h2>
+                  {selectedTask.description && (
+                    <p className="text-muted-foreground leading-relaxed mb-4 break-words whitespace-pre-wrap">
+                      {selectedTask.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="ml-4 p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <div
+                  className={`px-4 py-2 text-sm font-semibold rounded-full border ${
+                    selectedTask.priority === "high" || selectedTask.priority === "urgent"
+                      ? "bg-red-500/20 text-red-400 border-red-500/30"
+                      : selectedTask.priority === "medium"
+                        ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                        : "bg-green-500/20 text-green-400 border-green-500/30"
+                  }`}
+                >
+                  Priority: {selectedTask.priority}
+                </div>
+                <div className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-white rounded-full shadow-lg flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  <span className="font-bold">+{selectedTask.xp || 3} XP</span>
+                </div>
+                {selectedTask.category && (
+                  <div className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-2 border border-emerald-500/30">
+                    <Zap className="w-4 h-4" />#{selectedTask.category}
+                  </div>
+                )}
+              </div>
+
+              {selectedTask.due_date && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  Due: {new Date(selectedTask.due_date).toLocaleDateString()}
+                </div>
+              )}
+
+              {selectedTask.goal_id && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg">
+                  <Target className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-primary font-semibold">Linked to a goal</span>
+                </div>
+              )}
+
+              {!selectedTask.completed && (
+                <button
+                  onClick={() => {
+                    handleFocusTask(selectedTask.id)
+                    setSelectedTask(null)
+                  }}
+                  className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                >
+                  <Zap className="w-5 h-5" />
+                  Start Focus Session
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

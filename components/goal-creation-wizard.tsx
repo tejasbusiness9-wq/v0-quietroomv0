@@ -15,7 +15,6 @@ interface NewGoal {
   title: string
   category: "weekly" | "monthly" | "yearly"
   motivation: string
-  milestones: string[]
   target_hours: number
   image: string
 }
@@ -32,7 +31,6 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
     title: "",
     category: "monthly",
     motivation: "",
-    milestones: ["", "", ""],
     target_hours: 10,
     image: "",
   })
@@ -43,9 +41,8 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
     { step: 1, title: "What do you want to achieve?", description: "Be clear and specific" },
     { step: 2, title: "When do you want to complete it?", description: "Choose your timeline" },
     { step: 3, title: "Why does this matter?", description: "Connect emotionally" },
-    { step: 4, title: "Break it into milestones", description: "Define measurable steps" },
-    { step: 5, title: "How much time will this take?", description: "Set your target hours" },
-    { step: 6, title: "Pick an inspiring image", description: "Make it visual" },
+    { step: 4, title: "How much time will this take?", description: "Set your target hours" },
+    { step: 5, title: "Pick an inspiring image", description: "Make it visual" },
   ]
 
   const handleNext = () => {
@@ -106,7 +103,6 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
       title: "",
       category: "monthly",
       motivation: "",
-      milestones: ["", "", ""],
       target_hours: 10,
       image: "",
     })
@@ -158,8 +154,10 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
                   value={newGoal.title}
                   onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
                   placeholder="e.g., Build a portfolio website"
+                  maxLength={60}
                   className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                <p className="text-xs text-muted-foreground mt-1 text-right">{newGoal.title.length}/60 characters</p>
               </div>
             )}
 
@@ -195,31 +193,17 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
                   onChange={(e) => setNewGoal({ ...newGoal, motivation: e.target.value })}
                   placeholder="Write what this goal means to you..."
                   rows={4}
+                  maxLength={300}
                   className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
-              </div>
-            )}
-
-            {currentStep === 4 && (
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-foreground mb-2">Define 1-5 Milestones</label>
-                {newGoal.milestones.slice(0, 3).map((milestone, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    value={milestone}
-                    onChange={(e) => updateMilestone(index, e.target.value)}
-                    placeholder={`Milestone ${index + 1}`}
-                    className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                ))}
-                <p className="text-xs text-muted-foreground mt-2">
-                  Example: Week 1: Research, Week 2: Design, Week 3: Build
+                <p className="text-xs text-muted-foreground mt-1 text-right">
+                  {newGoal.motivation.length}/300 characters
                 </p>
               </div>
             )}
 
-            {currentStep === 5 && (
+            {/* Step 4 is now target hours */}
+            {currentStep === 4 && (
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-foreground mb-2">Target Hours</label>
                 <div className="grid grid-cols-3 gap-3 mb-4">
@@ -268,7 +252,8 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
               </div>
             )}
 
-            {currentStep === 6 && (
+            {/* Step 5 is now image upload */}
+            {currentStep === 5 && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">Upload Goal Image (Optional)</label>
                 {!imagePreview ? (
