@@ -462,7 +462,7 @@ export default function Home() {
           />
         )
       case "zen-mode":
-        return <ZenModePage taskId={zenModeTaskId} />
+        return <ZenModePage taskId={zenModeTaskId} onNavigateToQ={() => setCurrentPage("talk-to-q")} />
       case "talk-to-q":
         return <TalkToQPage />
       case "leaderboard":

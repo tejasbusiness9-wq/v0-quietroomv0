@@ -46,9 +46,10 @@ interface ZenModePageProps {
   taskId?: string | null
   goalName?: string
   goalId?: string | null
+  onNavigateToQ?: () => void
 }
 
-export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: ZenModePageProps) {
+export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNavigateToQ }: ZenModePageProps) {
   const [minutes, setMinutes] = useState(25)
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
@@ -91,6 +92,8 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
     minutes: number
     sessionId: string
   } | null>(null)
+
+  const [honorConfirmed, setHonorConfirmed] = useState(false)
 
   const handleGiveUp = () => {
     setIsFullscreen(false)
@@ -413,6 +416,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
     }
 
     setSessionData(null)
+    setHonorConfirmed(false) // Reset honor confirmation
   }
 
   const handleFailureClaim = async () => {
@@ -510,15 +514,20 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
       setShowXPToast(true)
       setTimeout(() => setShowXPToast(false), 3000)
 
+      setTimeout(() => {
+        setShowDiagnosisModal(true)
+      }, 2000)
+
       if (newLevel > currentProfile.level) {
         setTimeout(() => {
           setNewLevel(newLevel)
           setShowLevelUp(true)
-        }, 2000)
+        }, 3500)
       }
     }
 
-    setShowDiagnosisModal(true)
+    setSessionData(null)
+    setHonorConfirmed(false) // Reset honor confirmation
   }
 
   const handleSendDiagnosis = () => {
@@ -526,9 +535,11 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
 
     setShowDiagnosisModal(false)
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem("q_prefilled_query", diagnosisText)
-      window.location.href = "/talk-to-q"
+    if (onNavigateToQ) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("q_prefilled_query", diagnosisText)
+      }
+      onNavigateToQ()
     }
 
     setDiagnosisText("")
@@ -1015,88 +1026,123 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
         )}
 
       {showDebriefModal && sessionData && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-background border-2 border-primary/50 rounded-2xl max-w-lg w-full p-6 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
-                <Target className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold">Debrief & Honor Check</h2>
-              <p className="text-muted-foreground">Did you truly focus and complete your work?</p>
-            </div>
-
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Timer className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">Session Time</p>
-                  <p className="text-lg font-bold text-primary">{sessionData.minutes} minutes</p>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/20 border-2 border-purple-500/30 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-purple-500/20">
+            <div className="p-6 space-y-6">
+              {/* Header */}
+              <div className="text-center space-y-2 border-b border-purple-500/20 pb-6">
+                <div className="w-20 h-20 mx-auto rounded-full bg-purple-500/20 flex items-center justify-center ring-2 ring-purple-500/40">
+                  <Target className="w-10 h-10 text-purple-400" />
                 </div>
+                <h2 className="text-3xl font-bold text-white">Be honest to yourself</h2>
+                <p className="text-gray-400">Take a moment to reflect on your session.</p>
               </div>
 
-              {sessionData.goalTitle && (
-                <div className="flex items-start gap-2">
-                  <Target className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">Goal</p>
-                    <p className="text-sm text-foreground break-all">{sessionData.goalTitle}</p>
+              {/* Session Context Card */}
+              <div className="space-y-3 p-5 bg-black/40 border border-purple-500/20 rounded-xl backdrop-blur-sm">
+                <div className="flex items-start gap-3">
+                  <Timer className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">Session Time</p>
+                    <p className="text-2xl font-bold text-purple-400">{sessionData.minutes} minutes</p>
                   </div>
                 </div>
-              )}
 
-              {sessionData.taskTitle && (
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">Task</p>
-                    <p className="text-sm text-foreground break-all">{sessionData.taskTitle}</p>
+                {sessionData.goalTitle && (
+                  <div className="flex items-start gap-3 pt-3 border-t border-purple-500/10">
+                    <div className="px-2 py-1 bg-purple-500/20 rounded text-xs font-semibold text-purple-300 shrink-0">
+                      GOAL
+                    </div>
+                    <p className="text-sm text-white break-all flex-1">{sessionData.goalTitle}</p>
                   </div>
+                )}
+
+                {sessionData.taskTitle && (
+                  <div className="flex items-start gap-3 pt-3 border-t border-purple-500/10">
+                    <div className="px-2 py-1 bg-blue-500/20 rounded text-xs font-semibold text-blue-300 shrink-0">
+                      TASK
+                    </div>
+                    <p className="text-sm text-white break-all flex-1">{sessionData.taskTitle}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Psychological Honor Check */}
+              <div className="p-5 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-xl space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-purple-400 mt-1 shrink-0" />
+                  <blockquote className="text-sm italic text-gray-300 leading-relaxed">
+                    "Be honest. No one is watching, but you know the truth. Did you actually put in the work, or are you
+                    just chasing a number?"
+                  </blockquote>
                 </div>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={honorConfirmed}
+                    onChange={(e) => setHonorConfirmed(e.target.checked)}
+                    className="mt-1 w-5 h-5 rounded border-2 border-purple-500/50 bg-black/40 checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/50 cursor-pointer transition-all"
+                  />
+                  <span className="text-sm font-medium text-white group-hover:text-purple-300 transition-colors">
+                    I confirm: I didn't fake this. This progress is real.
+                  </span>
+                </label>
+              </div>
+
+              {/* Rewards Preview */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                  <h3 className="font-semibold text-green-400 mb-2 text-sm">Success Rewards</h3>
+                  <ul className="text-xs space-y-1 text-gray-400">
+                    <li>⚡ {Math.floor(sessionData.minutes * 5)} XP</li>
+                    <li>💎 {Math.floor(sessionData.minutes / 5)} Aura</li>
+                    {sessionData.taskTitle && <li>✅ Task completed</li>}
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+                  <h3 className="font-semibold text-orange-400 mb-2 text-sm">Failure</h3>
+                  <ul className="text-xs space-y-1 text-gray-400">
+                    <li>⚡ {Math.floor(sessionData.minutes * 5 * 0.5)} XP (50%)</li>
+                    <li>💎 0 Aura</li>
+                    <li>❌ No completion</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-2">
+                <Button
+                  onClick={handleFailureClaim}
+                  variant="outline"
+                  className="flex-1 border-orange-500/50 hover:bg-orange-500/20 bg-black/40 text-orange-300 hover:text-orange-200 h-14"
+                >
+                  <XCircle className="w-5 h-5 mr-2" />
+                  <div className="text-left">
+                    <div className="font-semibold">Click Failed</div>
+                    <div className="text-xs opacity-70">Pity XP (50%) & 0 Aura</div>
+                  </div>
+                </Button>
+                <Button
+                  onClick={handleSuccessClaim}
+                  disabled={!honorConfirmed}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-700 disabled:to-gray-700 disabled:opacity-50 disabled:cursor-not-allowed h-14 shadow-lg shadow-purple-500/20"
+                >
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                  <div className="text-left">
+                    <div className="font-semibold">Click Success</div>
+                    <div className="text-xs opacity-90">Full rewards + Mark done</div>
+                  </div>
+                </Button>
+              </div>
+
+              {!honorConfirmed && (
+                <p className="text-xs text-center text-purple-400/60 animate-pulse">
+                  ↑ Confirm your integrity to claim success
+                </p>
               )}
             </div>
-
-            <div className="space-y-4">
-              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                <h3 className="font-semibold text-green-600 mb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" />
-                  Success Rewards
-                </h3>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>⚡ {Math.floor(sessionData.minutes * 5)} XP (5 XP/min)</li>
-                  <li>💎 {Math.floor(sessionData.minutes / 5)} Aura (1 Aura/5min)</li>
-                  <li>✅ Task marked complete</li>
-                </ul>
-              </div>
-
-              <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                <h3 className="font-semibold text-orange-600 mb-2 flex items-center gap-2">
-                  <XCircle className="w-5 h-5" />
-                  Failure Penalty
-                </h3>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>⚡ {Math.floor(sessionData.minutes * 5 * 0.5)} XP (50% Pity XP)</li>
-                  <li>💎 0 Aura</li>
-                  <li>❌ Task not marked complete</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={handleFailureClaim}
-                variant="outline"
-                className="flex-1 border-orange-500/50 hover:bg-orange-500/10 bg-transparent"
-              >
-                <XCircle className="w-4 h-4 mr-2" />I Failed
-              </Button>
-              <Button onClick={handleSuccessClaim} className="flex-1 bg-green-600 hover:bg-green-700">
-                <CheckCircle2 className="w-4 h-4 mr-2" />I Succeeded
-              </Button>
-            </div>
-
-            <p className="text-xs text-center text-muted-foreground">
-              Be honest with yourself. Your integrity shapes your growth.
-            </p>
           </div>
         </div>
       )}
