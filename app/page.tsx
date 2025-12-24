@@ -345,15 +345,17 @@ export default function Home() {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={(e) => {
-                            e.stopPropagation()
-                            toggleTaskComplete(task.id, task.completed)
-                          }}
-                          className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
-                        />
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              toggleTaskComplete(task.id, task.completed)
+                            }}
+                            className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
+                          />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <h3
                             className={`font-semibold text-foreground mb-2 break-words ${

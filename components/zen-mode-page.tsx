@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
-import { Play, Volume2 } from "lucide-react"
+import { Play, Volume2, XCircle, CheckCircle2, AlertCircle, Timer, Target, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,6 +11,7 @@ import { Bird, Waves, CloudRain, Flame, Snowflake } from "lucide-react"
 import { AuraToast } from "@/components/aura-toast"
 import { XPToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Goal {
   id: string
@@ -81,6 +82,21 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
   const [mediaTab, setMediaTab] = useState<"static" | "animated" | "sounds">("animated")
   const [showAuraToast, setShowAuraToast] = useState(false)
   const [auraToastData, setAuraToastData] = useState({ aura: 0, message: "" })
+  const [showDebriefModal, setShowDebriefModal] = useState(false)
+  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false)
+  const [diagnosisText, setDiagnosisText] = useState("")
+  const [sessionData, setSessionData] = useState<{
+    goalTitle?: string
+    taskTitle?: string
+    minutes: number
+    sessionId: string
+  } | null>(null)
+
+  const handleGiveUp = () => {
+    setIsFullscreen(false)
+    setIsRunning(false)
+    setShowDiagnosisModal(true)
+  }
 
   useEffect(() => {
     setIsMounted(true)
@@ -221,14 +237,44 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
     }
 
     const supabase = getSupabaseBrowserClient()
+
+    let goalTitle = undefined
+    let taskTitle = undefined
+
+    if (selectedGoal !== "none") {
+      const { data: goal } = await supabase.from("goals").select("title").eq("id", selectedGoal).maybeSingle()
+      goalTitle = goal?.title
+    }
+
+    if (selectedTask !== "none") {
+      const { data: task } = await supabase.from("tasks").select("title").eq("id", selectedTask).maybeSingle()
+      taskTitle = task?.title
+    }
+
+    setSessionData({
+      goalTitle,
+      taskTitle,
+      minutes: initialMinutes,
+      sessionId,
+    })
+
+    setShowDebriefModal(true)
+  }
+
+  const handleSuccessClaim = async () => {
+    if (!sessionData) return
+
+    setShowDebriefModal(false)
+
+    const supabase = getSupabaseBrowserClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     if (!user) return
 
-    const xpEarned = Math.floor(initialMinutes * 5)
-    const auraEarned = Math.floor(initialMinutes / 5)
+    const xpEarned = Math.floor(sessionData.minutes * 5)
+    const auraEarned = Math.floor(sessionData.minutes / 5)
 
     const { data: currentProfile } = await supabase
       .from("profiles")
@@ -273,15 +319,15 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
           ended_at: new Date().toISOString(),
           xp_earned: xpEarned,
         })
-        .eq("id", sessionId)
+        .eq("id", sessionData.sessionId)
 
       await supabase.from("activity_log").insert({
         user_id: user.id,
         activity_type: "zen_session",
-        related_id: sessionId,
+        related_id: sessionData.sessionId,
         xp_earned: xpEarned,
         metadata: {
-          minutes: initialMinutes,
+          minutes: sessionData.minutes,
           aura_earned: auraEarned,
         },
       })
@@ -302,6 +348,10 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
           )
         }
         await Promise.all(levelUpPromises)
+      }
+
+      if (selectedTask !== "none") {
+        await supabase.from("tasks").update({ completed: true }).eq("id", selectedTask)
       }
 
       if (selectedGoal !== "none") {
@@ -358,47 +408,131 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
         setTimeout(() => {
           setNewLevel(newLevel)
           setShowLevelUp(true)
-        }, 3500)
+        }, 2000)
       }
     }
 
-    if (selectedTask !== "none") {
-      await supabase
-        .from("tasks")
-        .update({
-          status: "completed",
-          completed: true,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", selectedTask)
-    }
-
-    setSessionId(null)
-    setTargetTask(null)
+    setSessionData(null)
   }
 
-  const handleGiveUp = async () => {
-    if (!confirm("Are you sure you want to give up? No XP will be earned.")) return
+  const handleFailureClaim = async () => {
+    if (!sessionData) return
 
-    setIsRunning(false)
-    setIsFullscreen(false)
-    setMinutes(25)
-    setSeconds(0)
-    setInitialMinutes(25)
-    setTimeLeft(25 * 60)
+    setShowDebriefModal(false)
 
-    if (sessionId) {
-      const supabase = getSupabaseBrowserClient()
-      await supabase.from("zen_sessions").delete().eq("id", sessionId)
-      setSessionId(null)
-      setSessionStartTime(null)
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const xpEarned = Math.floor(sessionData.minutes * 5 * 0.5) // 50% pity XP
+
+    const { data: currentProfile } = await supabase
+      .from("profiles")
+      .select("total_xp, current_xp, level, xp_to_next_level, aura")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (currentProfile) {
+      const newTotalXP = currentProfile.total_xp + xpEarned
+      let newCurrentXP = currentProfile.current_xp + xpEarned
+      let newLevel = currentProfile.level
+      let newXPToNextLevel = currentProfile.xp_to_next_level
+      let levelsGained = 0
+
+      while (newCurrentXP >= newXPToNextLevel) {
+        newLevel += 1
+        levelsGained += 1
+        newCurrentXP -= newXPToNextLevel
+        newXPToNextLevel = Math.floor(150 * Math.pow(1.15, newLevel - 1))
+      }
+
+      const levelUpAura = levelsGained * 50
+      const newAura = currentProfile.aura + levelUpAura // No session aura, only level-up aura
+
+      await supabase
+        .from("profiles")
+        .update({
+          total_xp: newTotalXP,
+          current_xp: newCurrentXP,
+          level: newLevel,
+          xp_to_next_level: newXPToNextLevel,
+          aura: newAura,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id)
+
+      await supabase
+        .from("zen_sessions")
+        .update({
+          completed: false, // Mark as not successfully completed
+          ended_at: new Date().toISOString(),
+          xp_earned: xpEarned,
+        })
+        .eq("id", sessionData.sessionId)
+
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        activity_type: "zen_session",
+        related_id: sessionData.sessionId,
+        xp_earned: xpEarned,
+        metadata: {
+          minutes: sessionData.minutes,
+          pity_xp: true,
+          aura_earned: 0,
+        },
+      })
+
+      if (levelsGained > 0) {
+        const levelUpPromises = []
+        for (let i = 0; i < levelsGained; i++) {
+          levelUpPromises.push(
+            supabase.from("activity_log").insert({
+              user_id: user.id,
+              activity_type: "level_up",
+              xp_earned: 0,
+              metadata: {
+                new_level: currentProfile.level + i + 1,
+                aura_earned: 50,
+              },
+            }),
+          )
+        }
+        await Promise.all(levelUpPromises)
+      }
+
+      setXpToastData({
+        xp: xpEarned,
+        message: "Pity XP (50%) earned",
+      })
+      setShowXPToast(true)
+      setTimeout(() => setShowXPToast(false), 3000)
+
+      if (newLevel > currentProfile.level) {
+        setTimeout(() => {
+          setNewLevel(newLevel)
+          setShowLevelUp(true)
+        }, 2000)
+      }
     }
 
-    toast({
-      title: "Session Forfeited",
-      description: "Timer reset. Try again when ready.",
-      variant: "destructive",
-    })
+    setShowDiagnosisModal(true)
+  }
+
+  const handleSendDiagnosis = () => {
+    if (!diagnosisText.trim()) return
+
+    setShowDiagnosisModal(false)
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("q_prefilled_query", diagnosisText)
+      window.location.href = "/talk-to-q"
+    }
+
+    setDiagnosisText("")
+    setSessionData(null)
   }
 
   const formatTime = (time: number) => {
@@ -879,6 +1013,142 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId }: Ze
           </div>,
           document.body,
         )}
+
+      {showDebriefModal && sessionData && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-background border-2 border-primary/50 rounded-2xl max-w-lg w-full p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
+                <Target className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold">Debrief & Honor Check</h2>
+              <p className="text-muted-foreground">Did you truly focus and complete your work?</p>
+            </div>
+
+            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Timer className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">Session Time</p>
+                  <p className="text-lg font-bold text-primary">{sessionData.minutes} minutes</p>
+                </div>
+              </div>
+
+              {sessionData.goalTitle && (
+                <div className="flex items-start gap-2">
+                  <Target className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">Goal</p>
+                    <p className="text-sm text-foreground break-all">{sessionData.goalTitle}</p>
+                  </div>
+                </div>
+              )}
+
+              {sessionData.taskTitle && (
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">Task</p>
+                    <p className="text-sm text-foreground break-all">{sessionData.taskTitle}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <h3 className="font-semibold text-green-600 mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Success Rewards
+                </h3>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>⚡ {Math.floor(sessionData.minutes * 5)} XP (5 XP/min)</li>
+                  <li>💎 {Math.floor(sessionData.minutes / 5)} Aura (1 Aura/5min)</li>
+                  <li>✅ Task marked complete</li>
+                </ul>
+              </div>
+
+              <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                <h3 className="font-semibold text-orange-600 mb-2 flex items-center gap-2">
+                  <XCircle className="w-5 h-5" />
+                  Failure Penalty
+                </h3>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>⚡ {Math.floor(sessionData.minutes * 5 * 0.5)} XP (50% Pity XP)</li>
+                  <li>💎 0 Aura</li>
+                  <li>❌ Task not marked complete</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handleFailureClaim}
+                variant="outline"
+                className="flex-1 border-orange-500/50 hover:bg-orange-500/10 bg-transparent"
+              >
+                <XCircle className="w-4 h-4 mr-2" />I Failed
+              </Button>
+              <Button onClick={handleSuccessClaim} className="flex-1 bg-green-600 hover:bg-green-700">
+                <CheckCircle2 className="w-4 h-4 mr-2" />I Succeeded
+              </Button>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Be honest with yourself. Your integrity shapes your growth.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showDiagnosisModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-background border-2 border-orange-500/50 rounded-2xl max-w-lg w-full p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-full bg-orange-500/20 flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-orange-500" />
+              </div>
+              <h2 className="text-2xl font-bold">What went wrong?</h2>
+              <p className="text-muted-foreground">Let Q help you understand and overcome this obstacle</p>
+            </div>
+
+            <Textarea
+              value={diagnosisText}
+              onChange={(e) => setDiagnosisText(e.target.value)}
+              placeholder="E.g., I got distracted by social media, felt overwhelmed, didn't understand the task..."
+              className="min-h-[120px] resize-none"
+              maxLength={500}
+            />
+
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Be specific about what blocked you</span>
+              <span>{diagnosisText.length}/500</span>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  setShowDiagnosisModal(false)
+                  setDiagnosisText("")
+                  setSessionData(null)
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Skip
+              </Button>
+              <Button
+                onClick={handleSendDiagnosis}
+                disabled={!diagnosisText.trim()}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Talk to Q
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

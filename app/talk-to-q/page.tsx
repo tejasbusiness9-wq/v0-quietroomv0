@@ -26,6 +26,24 @@ export default function TalkToQPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const prefilledQuery = localStorage.getItem("q_prefilled_query")
+      if (prefilledQuery) {
+        setInput(prefilledQuery)
+        localStorage.removeItem("q_prefilled_query")
+
+        // Auto-submit the query after a short delay
+        setTimeout(() => {
+          const form = document.querySelector("form")
+          if (form) {
+            form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }))
+          }
+        }, 500)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
     })
@@ -245,9 +263,7 @@ export default function TalkToQPage() {
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
           </form>
-          <p className="text-xs text-muted-foreground text-center mt-3">
-            Q can make mistakes, so double-check it
-          </p>
+          <p className="text-xs text-muted-foreground text-center mt-3">Q can make mistakes, so double-check it</p>
         </div>
       </div>
     </>
