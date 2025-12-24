@@ -1,5 +1,25 @@
 "use client"
-
+import { useState, useRef, memo, useEffect } from "react"
+import { StatsSection } from "@/components/stats-section"
+import { ComingSoonBanner } from "@/components/coming-soon-banner"
+import { GoalsGallery } from "@/components/goals-gallery"
+import { GoalsList } from "@/components/goals-list"
+import { GoalDetailDrawer } from "@/components/goal-detail-drawer"
+import { GoalsInsights } from "@/components/goals-insights"
+import { MotivationalBanner } from "@/components/motivational-banner"
+import ZenModePage from "@/components/zen-mode-page"
+import TasksPage from "@/app/tasks/page"
+import ProfilePage from "@/app/profile/page"
+import TalkToQPage from "@/app/talk-to-q/page"
+import LeaderboardPage from "../leaderboard/page"
+import RewardsPage from "@/app/rewards/page"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { TaskCreationModal } from "@/components/task-creation-modal"
+import { XpToast } from "@/components/xp-toast"
+import { LevelUpCelebration } from "@/components/level-up-celebration"
+import { getLevelInfo } from "@/lib/leveling-system"
 import {
   Settings,
   Search,
@@ -16,35 +36,7 @@ import {
   Calendar,
   X,
   Timer,
-  Flame,
-  Crown,
-  Star,
-  CheckCircle2,
-  Play,
-  ArrowRight,
 } from "lucide-react"
-import { useState, useRef, memo, useEffect } from "react"
-import { StatsSection } from "@/components/stats-section"
-import { ComingSoonBanner } from "@/components/coming-soon-banner"
-import { GoalsGallery } from "@/components/goals-gallery"
-import { GoalsList } from "@/components/goals-list"
-import { GoalDetailDrawer } from "@/components/goal-detail-drawer"
-import { GoalsInsights } from "@/components/goals-insights"
-import { MotivationalBanner } from "@/components/motivational-banner"
-import ZenModePage from "@/components/zen-mode-page"
-import TasksPage from "@/app/tasks/page"
-import ProfilePage from "@/app/profile/page"
-import TalkToQPage from "@/app/talk-to-q/page"
-import LeaderboardPage from "./leaderboard/page"
-import RewardsPage from "@/app/rewards/page" // Added RewardsPage import
-import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
-import { TaskCreationModal } from "@/components/task-creation-modal"
-import { XpToast } from "@/components/xp-toast"
-import { LevelUpCelebration } from "@/components/level-up-celebration"
-import { getLevelInfo } from "@/lib/leveling-system"
-import Link from "next/link"
 
 type PageType =
   | "dashboard"
@@ -55,7 +47,7 @@ type PageType =
   | "talk-to-q"
   | "community"
   | "profile"
-  | "rewards" // Added 'rewards' to PageType
+  | "rewards"
 
 const NavItem = memo(({ item, isActive, onClick }: any) => {
   const Icon = item.icon
@@ -82,11 +74,26 @@ const NavItem = memo(({ item, isActive, onClick }: any) => {
 
 NavItem.displayName = "NavItem"
 
-export default function Home() {
+export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.push("/")
+      } else {
+        setIsLoadingUser(false)
+      }
+    }
+    checkAuth()
+  }, [router, supabase])
 
   const [tasks, setTasks] = useState<any[]>([])
   const [loadingTasks, setLoadingTasks] = useState(true)
@@ -105,23 +112,6 @@ export default function Home() {
   const [profileStats, setProfileStats] = useState<any>(null)
   const [selectedTask, setSelectedTask] = useState<any | null>(null)
 
-  // Check if user is authenticated for landing page redirection
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (user) {
-        // User is authenticated, redirect to dashboard
-        router.push("/dashboard")
-      } else {
-        setIsLoadingUser(false) // Only set loading to false if user is NOT authenticated
-      }
-    }
-    checkAuth()
-  }, [router, supabase])
-
   useEffect(() => {
     fetchProfileData()
   }, [])
@@ -134,14 +124,12 @@ export default function Home() {
 
     if (!user) return
 
-    // Fetch profile
     const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
 
     if (profileData) {
       setProfileData(profileData)
     }
 
-    // Fetch stats
     const { data: goalsData } = await supabase
       .from("goals")
       .select("id")
@@ -242,12 +230,10 @@ export default function Home() {
     if (newTask.when === "today") {
       dueDate = new Date().toISOString()
     } else if (newTask.when === "this-week") {
-      // Set due date to 3 days from now (middle of the week)
       const threeDaysFromNow = new Date()
       threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
       dueDate = threeDaysFromNow.toISOString()
     }
-    // For "someday", dueDate remains null
 
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
@@ -302,13 +288,12 @@ export default function Home() {
       fetchTodaysTasks(user.id)
     }
 
-    // Refetch profile to update XP display
     await fetchProfileData()
   }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push("/auth/login")
+    router.push("/")
   }
 
   const [currentPage, setCurrentPage] = useState<PageType>("dashboard")
@@ -505,7 +490,7 @@ export default function Home() {
       case "profile":
         return <ProfilePage profileData={profileData} profileStats={profileStats} />
       case "rewards":
-        return <RewardsPage /> // Added rewards case
+        return <RewardsPage />
       default:
         return (
           <div className="mb-8">
@@ -590,7 +575,7 @@ export default function Home() {
     { id: "goals", label: "Goals", icon: Target },
     { id: "tasks", label: "Tasks", icon: CheckSquare },
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-    { id: "zen-mode", label: "Zen Mode", icon: Timer }, // Changed icon to Timer
+    { id: "zen-mode", label: "Zen Mode", icon: Timer },
   ] as const
 
   const communityItems = [
@@ -600,14 +585,8 @@ export default function Home() {
 
   const userItems = [
     { id: "profile", label: "Profile", icon: User },
-    { id: "rewards", label: "Rewards", icon: Gift }, // Added Rewards navigation
+    { id: "rewards", label: "Rewards", icon: Gift },
   ] as const
-
-  // Landing page specific logic
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id)
-    element?.scrollIntoView({ behavior: "smooth" })
-  }
 
   useEffect(() => {
     if (user && currentPage === "dashboard") {
@@ -626,476 +605,6 @@ export default function Home() {
     )
   }
 
-  // Render landing page if user is not logged in
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-foreground">Quiet Room</span>
-            </div>
-            <nav className="hidden md:flex items-center gap-8">
-              <button
-                onClick={() => scrollToSection("features")}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Features
-              </button>
-              <button
-                onClick={() => scrollToSection("how-it-works")}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                How It Works
-              </button>
-              <button
-                onClick={() => scrollToSection("rewards")}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Rewards
-              </button>
-              <Link
-                href="/auth/signup"
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all"
-              >
-                Enter the Game
-              </Link>
-            </nav>
-          </div>
-        </header>
-
-        {/* Hero Section */}
-        <section className="pt-32 pb-20 px-6">
-          <div className="max-w-7xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-8">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">Turn Productivity Into An Epic Adventure</span>
-            </div>
-
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 text-balance">
-              Level Up Your Life,
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-primary">
-                One Quest at a Time
-              </span>
-            </h1>
-
-            <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto text-balance">
-              Transform your daily tasks into an immersive game. Earn XP, unlock rewards, compete on leaderboards, and
-              achieve your goals while having fun.
-            </p>
-
-            <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Link
-                href="/auth/signup"
-                className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-bold text-lg hover:bg-primary/90 transition-all hover:scale-105 flex items-center gap-2 shadow-lg shadow-primary/25"
-              >
-                <Play className="w-5 h-5" />
-                Start Your Journey
-              </Link>
-              <button
-                onClick={() => scrollToSection("features")}
-                className="px-8 py-4 bg-card border border-border text-foreground rounded-lg font-bold text-lg hover:bg-card/80 transition-all flex items-center gap-2"
-              >
-                Explore Features
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 max-w-4xl mx-auto">
-              <div className="bg-card border border-border rounded-2xl p-8">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                  <Zap className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                  50M+
-                </div>
-                <div className="text-muted-foreground">Total XP Earned</div>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-8">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                  <Flame className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                  125
-                </div>
-                <div className="text-muted-foreground">Avg Daily Streak</div>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-8">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                  <Crown className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                  10K+
-                </div>
-                <div className="text-muted-foreground">Active Players</div>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-8">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                  <Star className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                  95%
-                </div>
-                <div className="text-muted-foreground">Goal Success Rate</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="py-20 px-6 bg-card/50">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
-                <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Game Mechanics</span>
-              </div>
-              <h2 className="text-5xl font-bold mb-4">Epic Features That Make Work Feel Like Play</h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Every feature is designed to keep you engaged, motivated, and progressing toward your goals.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Zen Mode Feature */}
-              <div className="bg-background border border-border rounded-3xl p-8 overflow-hidden">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 flex items-center justify-center flex-shrink-0">
-                    <Timer className="w-8 h-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Zen Mode</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Enter deep focus with beautiful backgrounds and ambient sounds. Earn 5 XP per minute and 1 Aura
-                      per 5 minutes. Complete sessions to maximize rewards!
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Customizable timer (15-60 min)</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Beautiful animated backgrounds</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Ambient soundscapes</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border">
-                  <img
-                    src="/zen-mode-timer-with-nature-background.jpg"
-                    alt="Zen Mode Screenshot"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Quest System Feature */}
-              <div className="bg-background border border-border rounded-3xl p-8 overflow-hidden">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-500/10 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-8 h-8 text-purple-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Quest System</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Complete tasks to earn XP. Regular tasks give 3 XP, but link them to goals for bonus rewards and
-                      track your progress across multiple quests.
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Create unlimited tasks</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Link tasks to goals</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Track daily progress</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border">
-                  <img
-                    src="/task-dashboard-with-progress-bars.jpg"
-                    alt="Quest System Screenshot"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Vision & Goals Feature */}
-              <div className="bg-background border border-border rounded-3xl p-8 overflow-hidden">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/10 flex items-center justify-center flex-shrink-0">
-                    <Target className="w-8 h-8 text-cyan-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Vision & Goals</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create meaningful goals with our 5-step wizard. Add your vision wall for inspiration, set clear
-                      deadlines, and track progress with beautiful stats.
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Personal vision wall</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>5-step goal creation wizard</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Progress tracking & streaks</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border">
-                  <img
-                    src="/goal-tracking-dashboard.jpg"
-                    alt="Vision & Goals Screenshot"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Global Leaderboard Feature */}
-              <div className="bg-background border border-border rounded-3xl p-8 overflow-hidden">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 flex items-center justify-center flex-shrink-0">
-                    <Trophy className="w-8 h-8 text-yellow-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Global Leaderboard</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Compete with players worldwide. Climb the ranks to earn daily Aura rewards. Top 10 get 100 Aura,
-                      ranks 11-50 get 50 Aura, and 51-100 get 20 Aura daily!
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Ranked by total XP earned</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Daily Aura rewards</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Player titles & badges</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border">
-                  <img
-                    src="/leaderboard-rankings.jpg"
-                    alt="Global Leaderboard Screenshot"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Rewards Store Feature */}
-              <div className="bg-background border border-border rounded-3xl p-8 overflow-hidden">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/20 to-pink-500/10 flex items-center justify-center flex-shrink-0">
-                    <Gift className="w-8 h-8 text-pink-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Rewards Store</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Spend your hard-earned Aura on real rewards! Buy new backgrounds, ambient sounds, and even
-                      real-life permissions like gaming time or cheat meals.
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Unlock premium backgrounds</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>New ambient soundscapes</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Real-life permission rewards</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border">
-                  <img
-                    src="/rewards-store-items.jpg"
-                    alt="Rewards Store Screenshot"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Q AI Companion Feature */}
-              <div className="bg-background border border-border rounded-3xl p-8 overflow-hidden">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="w-8 h-8 text-green-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Q: Your AI Companion</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Meet Q, your gamified AI assistant. Ask questions, get advice in gaming slang, and let Q create
-                      tasks and goals for you with agent capabilities.
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Gamified conversational AI</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>Auto-create tasks & goals</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span>24/7 productivity coaching</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border">
-                  <img
-                    src="/ai-chat-interface.png"
-                    alt="Q AI Companion Screenshot"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section id="how-it-works" className="py-20 px-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
-                <Target className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Simple Yet Powerful</span>
-              </div>
-              <h2 className="text-5xl font-bold mb-4">Your Path to Victory</h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Follow these simple steps to start your productivity journey
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-4 gap-6">
-              <div className="bg-card border border-border rounded-3xl p-8 relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-white">1</span>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                  <Play className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">Enter the Game</h3>
-                <p className="text-muted-foreground">
-                  Create your account and customize your player profile. Choose your path and set up your first goals.
-                </p>
-              </div>
-
-              <div className="bg-card border border-border rounded-3xl p-8 relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-white">2</span>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                  <Target className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">Create Quests</h3>
-                <p className="text-muted-foreground">
-                  Break down your goals into daily tasks. Each completed quest earns you XP and brings you closer to
-                  leveling up.
-                </p>
-              </div>
-
-              <div className="bg-card border border-border rounded-3xl p-8 relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-white">3</span>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                  <Timer className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">Focus & Grind</h3>
-                <p className="text-muted-foreground">
-                  Use Zen Mode for deep work sessions. Earn 5 XP per minute and accumulate Aura to spend in the rewards
-                  store.
-                </p>
-              </div>
-
-              <div className="bg-card border border-border rounded-3xl p-8 relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-white">4</span>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                  <Trophy className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">Level Up & Win</h3>
-                <p className="text-muted-foreground">
-                  Climb the leaderboard, unlock achievements, and spend Aura on rewards. Level up to get 50 Aura bonus!
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Rewards Section */}
-        <section id="rewards" className="py-20 px-6 bg-card/50">
-          <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
-              <Gift className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">Earn Real Rewards</span>
-            </div>
-            <h2 className="text-5xl font-bold mb-6">Ready to Transform Your Life?</h2>
-            <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-              Join thousands of players who have turned their productivity into an epic adventure. Start earning XP
-              today!
-            </p>
-            <Link
-              href="/auth/signup"
-              className="inline-flex items-center gap-2 px-10 py-5 bg-primary text-primary-foreground rounded-xl font-bold text-xl hover:bg-primary/90 transition-all hover:scale-105 shadow-2xl shadow-primary/25"
-            >
-              <Play className="w-6 h-6" />
-              Start Your Journey
-            </Link>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-8 px-6 border-t border-border">
-          <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
-            <p>© 2025 Quiet Room. Turn productivity into an epic adventure.</p>
-          </div>
-        </footer>
-      </div>
-    )
-  }
-
-  // Render dashboard if user is logged in
   return (
     <div className="dark">
       <audio ref={audioRef} src="/images/menu.mp3" preload="auto" />

@@ -94,11 +94,25 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   } | null>(null)
 
   const [honorConfirmed, setHonorConfirmed] = useState(false)
+  const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false)
 
   const handleGiveUp = () => {
+    console.log("[v0] Give Up button clicked")
+    setShowGiveUpConfirm(true)
+  }
+
+  const confirmGiveUp = () => {
+    console.log("[v0] Give up confirmed")
     setIsFullscreen(false)
     setIsRunning(false)
-    setShowDiagnosisModal(true)
+    setShowGiveUpConfirm(false)
+    setSessionData(null)
+    // Reset timer without any rewards
+    toast({
+      title: "Session Ended",
+      description: "No rewards earned. Try again when ready.",
+      variant: "destructive",
+    })
   }
 
   useEffect(() => {
@@ -1190,6 +1204,33 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
               >
                 <Send className="w-4 h-4 mr-2" />
                 Talk to Q
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGiveUpConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100000] flex items-center justify-center p-4">
+          <div className="bg-background border-2 border-red-500/50 rounded-2xl max-w-md w-full p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-red-500">Giving Up?</h2>
+              <p className="text-muted-foreground">You will not get any XP & Aura if you quit now.</p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowGiveUpConfirm(false)}
+                variant="outline"
+                className="flex-1 border-purple-500/50 hover:bg-purple-500/10"
+              >
+                Keep Going
+              </Button>
+              <Button onClick={confirmGiveUp} className="flex-1 bg-red-600 hover:bg-red-700">
+                Yes, Give Up
               </Button>
             </div>
           </div>
