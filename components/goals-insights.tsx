@@ -22,6 +22,7 @@ export function GoalsInsights() {
     xpEarned: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [activeBar, setActiveBar] = useState<number | null>(null)
 
   useEffect(() => {
     fetchRealStats()
@@ -101,8 +102,6 @@ export function GoalsInsights() {
 
     const totalGoalXP = allGoalsRes.data?.reduce((sum, goal) => sum + (goal.xp || 0), 0) || 0
 
-    console.log("[v0] Total XP from all goals:", totalGoalXP)
-
     // Calculate stats from real data
     const activeGoalsCount = activeGoalsRes.count || 0
     const completedGoalsCount = completedGoalsRes.count || 0
@@ -139,10 +138,11 @@ export function GoalsInsights() {
 
     const goalStreak = calculateStreak()
 
-    // Generate weekly activity chart from real data
     const generateWeeklyChart = () => {
-      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      const days = ["M", "T", "W", "T", "F", "S", "S"]
       const chartData = []
+
+      console.log("[v0] Activity log data:", activityLogRes.data)
 
       for (let i = 6; i >= 0; i--) {
         const date = new Date()
@@ -153,15 +153,16 @@ export function GoalsInsights() {
           (log) => new Date(log.created_at).toISOString().split("T")[0] === dateStr,
         )
         const totalXp = dayLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
-        const progress = Math.min((totalXp / 200) * 100, 100) // Normalize to 100%
+
+        console.log(`[v0] Date ${dateStr} (${days[date.getDay()]}): ${dayLogs?.length || 0} logs, ${totalXp} XP`)
 
         chartData.push({
-          day: days[date.getDay() === 0 ? 6 : date.getDay() - 1],
-          progress: Math.round(progress),
-          label: days[date.getDay() === 0 ? 6 : date.getDay() - 1].charAt(0),
+          day: days[date.getDay()],
+          xp: totalXp,
         })
       }
 
+      console.log("[v0] Final chart data:", chartData)
       return chartData
     }
 
@@ -211,9 +212,20 @@ export function GoalsInsights() {
     setSummaryStats({
       activeGoals: activeGoalsCount,
       completedGoals: completedGoalsCount,
-      xpEarned: totalGoalXP, // Use sum of all goal XP instead of activity log
+      xpEarned: totalGoalXP,
     })
     setLoading(false)
+  }
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-950 border border-purple-500/30 rounded-lg px-3 py-2 shadow-xl">
+          <p className="text-white text-sm font-medium">XP: {payload[0].value}</p>
+        </div>
+      )
+    }
+    return null
   }
 
   if (loading) {
@@ -270,29 +282,6 @@ export function GoalsInsights() {
           </div>
         ))}
       </div>
-
-      {/* Weekly Activity Chart */}
-      {weeklyStats.length > 0 && (
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="font-semibold text-foreground mb-6">Weekly Goal Activity</h3>
-          <div className="flex items-end justify-between gap-2 h-32">
-            {weeklyStats.map((stat, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full bg-muted rounded-t-lg overflow-hidden group relative">
-                  <div
-                    className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-lg transition-all hover:from-primary/90 hover:to-primary/70 cursor-pointer"
-                    style={{ height: `${stat.progress}%` }}
-                  />
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="text-xs font-semibold text-primary-foreground">{stat.progress}%</span>
-                  </div>
-                </div>
-                <span className="text-xs font-semibold text-muted-foreground">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Weekly Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

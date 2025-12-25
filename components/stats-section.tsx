@@ -3,6 +3,7 @@
 import { Star, Zap, TrendingUp, Timer, Trophy } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { useDataRefresh } from "@/contexts/data-refresh-context"
 
 export function StatsSection() {
   const [stats, setStats] = useState({
@@ -13,10 +14,11 @@ export function StatsSection() {
     leaderboardRank: null as number | null,
   })
   const [loading, setLoading] = useState(true)
+  const { refreshTrigger } = useDataRefresh()
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [refreshTrigger])
 
   const fetchStats = async () => {
     const supabase = getSupabaseBrowserClient()
@@ -49,6 +51,7 @@ export function StatsSection() {
         .from("zen_sessions")
         .select("duration_minutes")
         .eq("user_id", user.id)
+        .eq("completed", true)
         .gte("started_at", `${today}T00:00:00`)
         .lte("started_at", `${today}T23:59:59`),
       supabase.from("user_stats").select("total_xp, user_id").order("total_xp", { ascending: false }),

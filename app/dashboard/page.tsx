@@ -37,6 +37,8 @@ import {
   Timer,
 } from "lucide-react"
 import { StreakCounter } from "@/components/streak-counter"
+import { WeeklyXPChart } from "@/components/weekly-xp-chart"
+import { useDataRefresh } from "@/contexts/data-refresh-context" // Import data refresh context
 
 type PageType =
   | "dashboard"
@@ -80,6 +82,8 @@ export default function DashboardPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
+  const { refreshTrigger, triggerRefresh } = useDataRefresh() // Use refresh trigger to refetch data
+
   useEffect(() => {
     const checkAuth = async () => {
       const {
@@ -113,7 +117,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchProfileData()
-  }, [])
+  }, [refreshTrigger]) // Add refreshTrigger dependency
 
   const fetchProfileData = async () => {
     const supabase = getSupabaseBrowserClient()
@@ -203,6 +207,19 @@ export default function DashboardPage() {
     }
   }, [supabase])
 
+  useEffect(() => {
+    const initTasks = async () => {
+      const supabase = getSupabaseBrowserClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        await fetchTodaysTasks(user.id)
+      }
+    }
+    initTasks()
+  }, [refreshTrigger]) // Add refreshTrigger dependency
+
   const fetchTodaysTasks = async (userId: string) => {
     setLoadingTasks(true)
     const today = new Date().toISOString().split("T")[0]
@@ -252,7 +269,7 @@ export default function DashboardPage() {
     }
   }
 
-  const toggleTaskComplete = async (taskId: string, currentState: boolean) => {
+  const toggleComplete = async (id: string, currentState: boolean) => {
     if (!user) return
 
     const newState = !currentState
@@ -264,7 +281,7 @@ export default function DashboardPage() {
         completed_at: newState ? new Date().toISOString() : null,
         status: newState ? "completed" : "active",
       })
-      .eq("id", taskId)
+      .eq("id", id)
 
     if (!error && newState) {
       const { data: profile } = await supabase
@@ -288,6 +305,7 @@ export default function DashboardPage() {
     }
 
     await fetchProfileData()
+    triggerRefresh() // Trigger global refresh after task completion
   }
 
   const handleSignOut = async () => {
@@ -318,6 +336,7 @@ export default function DashboardPage() {
             </div>
 
             <StatsSection />
+            <WeeklyXPChart />
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-foreground">Today's Quests</h3>
@@ -368,7 +387,7 @@ export default function DashboardPage() {
                             checked={task.completed}
                             onChange={(e) => {
                               e.stopPropagation()
-                              toggleTaskComplete(task.id, task.completed)
+                              toggleComplete(task.id, task.completed)
                             }}
                             className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
                           />
@@ -565,9 +584,12 @@ export default function DashboardPage() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
                 <img src="/ui/logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
               </div>
-              <h1 className="text-lg font-bold text-sidebar-foreground">Quiet Room <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
-    Beta
-  </span></h1>
+              <h1 className="text-lg font-bold text-sidebar-foreground">
+                Quiet Room{" "}
+                <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
+                  Beta
+                </span>
+              </h1>
             </div>
             <p className="text-xs text-muted-foreground ml-10">Turn focus into XP</p>
           </div>
@@ -785,7 +807,7 @@ export default function DashboardPage() {
                   type="checkbox"
                   checked={selectedTask.completed}
                   onChange={() => {
-                    toggleTaskComplete(selectedTask.id, selectedTask.completed)
+                    toggleComplete(selectedTask.id, selectedTask.completed)
                     setSelectedTask(null)
                   }}
                   className="w-6 h-6 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"

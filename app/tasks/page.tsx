@@ -6,6 +6,7 @@ import { TaskCreationModal } from "@/components/task-creation-modal"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { XPToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
+import { useDataRefresh } from "@/contexts/data-refresh-context"
 
 interface Task {
   id: string
@@ -32,10 +33,11 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   const [showLevelUp, setShowLevelUp] = useState(false)
   const [newLevel, setNewLevel] = useState(0)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const { refreshTrigger, triggerRefresh } = useDataRefresh()
 
   useEffect(() => {
     fetchTasks()
-  }, [])
+  }, [refreshTrigger])
 
   const fetchTasks = async () => {
     const supabase = getSupabaseBrowserClient()
@@ -112,6 +114,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
       // Refresh tasks from database
       await fetchTasks()
+      triggerRefresh() // Trigger global refresh after task completion
     } catch (error) {
       console.error("[v0] Error in task completion:", error)
       // Revert optimistic update on error
@@ -153,6 +156,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
     if (!error) {
       fetchTasks()
+      triggerRefresh() // Trigger global refresh after task creation
     }
   }
 
@@ -176,6 +180,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
       fetchTasks()
       setSelectedTask(null)
       setShowTaskMenu(null)
+      triggerRefresh() // Trigger global refresh after task deletion
     }
   }
 
@@ -215,6 +220,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
       setIsEditModalOpen(false)
       setTaskToEdit(null)
       setShowTaskMenu(null)
+      triggerRefresh() // Trigger global refresh after task editing
     }
   }
 
@@ -517,7 +523,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
                   <span className="font-bold md:text-lg">+{selectedTask.xp || 3} XP</span>
                 </div>
                 {selectedTask.category && (
-                  <div className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-2 border border-emerald-500/30">
+                  <div className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-1 border border-emerald-500/30">
                     <Zap className="w-4 h-4 md:w-5 md:h-5" />#{selectedTask.category}
                   </div>
                 )}
