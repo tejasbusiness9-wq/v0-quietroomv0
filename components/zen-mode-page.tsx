@@ -184,24 +184,61 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
   const fetchEnvironments = async () => {
     const supabase = getSupabaseBrowserClient()
-    const { data, error } = await supabase
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    // Get default environments
+    const { data: systemEnvs, error: systemError } = await supabase
       .from("system_environments")
       .select("*")
       .order("created_at", { ascending: true })
 
-    if (error) {
-      console.error("Error fetching environments:", error)
+    // Get user's purchased environments from rewards_items through inventory
+    const { data: inventory } = await supabase
+      .from("inventory")
+      .select("item_type, is_used")
+      .eq("user_id", user.id)
+      .eq("is_used", true)
+
+    const purchasedItemIds = inventory?.map((inv) => inv.item_type) || []
+
+    const { data: purchasedEnvs } = await supabase
+      .from("rewards_items")
+      .select("*")
+      .eq("category", "system")
+      .in("id", purchasedItemIds)
+
+    if (systemError) {
+      console.error("Error fetching environments:", systemError)
       return
     }
 
-    const mappedData = data.map((env) => ({
-      id: env.id,
-      name: env.name,
-      background_value: env.background_url,
-      file_type: env.file_type,
-      media_type: env.media_type,
-    }))
-    setEnvironments(mappedData)
+    const mappedSystemEnvs =
+      systemEnvs?.map((env) => ({
+        id: env.id,
+        name: env.name,
+        description: env.description || "",
+        background_value: env.background_url,
+        file_type: env.file_type,
+        media_type: env.media_type,
+      })) || []
+
+    const mappedPurchasedEnvs =
+      purchasedEnvs?.map((env) => ({
+        id: env.id,
+        name: env.name,
+        description: env.description || "",
+        background_value: env.media_url || "",
+        file_type: env.media_type === "video" ? "mp4" : env.media_type === "image" ? "jpg" : "gif",
+        media_type: env.media_type === "video" ? "animated" : env.media_type === "gif" ? "animated" : "static",
+      })) || []
+
+    const allEnvironments = [...mappedSystemEnvs, ...mappedPurchasedEnvs]
+    setEnvironments(allEnvironments)
   }
 
   useEffect(() => {
