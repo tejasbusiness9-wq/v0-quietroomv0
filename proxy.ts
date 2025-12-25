@@ -37,17 +37,24 @@ export default async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect routes that require authentication
-  if (!user && !request.nextUrl.pathname.startsWith("/auth")) {
+  const publicRoutes = ["/", "/auth/login", "/auth/signup", "/auth/callback"]
+  const isPublicRoute = publicRoutes.some((route) => request.nextUrl.pathname === route)
+
+  if (!user && !isPublicRoute && !request.nextUrl.pathname.startsWith("/auth")) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from auth pages
   if (user && request.nextUrl.pathname.startsWith("/auth")) {
     const url = request.nextUrl.clone()
-    url.pathname = "/"
+    url.pathname = "/dashboard"
+    return NextResponse.redirect(url)
+  }
+
+  if (user && request.nextUrl.pathname === "/") {
+    const url = request.nextUrl.clone()
+    url.pathname = "/dashboard"
     return NextResponse.redirect(url)
   }
 

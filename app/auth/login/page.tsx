@@ -34,6 +34,7 @@ export default function LoginPage() {
       })
 
       if (error) throw error
+      router.push("/dashboard")
     } catch (err: any) {
       setError(err.message)
       setIsLoading(false)
@@ -53,7 +54,7 @@ export default function LoginPage() {
       })
 
       if (error) throw error
-      router.push("/")
+      router.push("/dashboard")
     } catch (err: any) {
       setError(err.message)
       setIsLoading(false)
@@ -88,7 +89,7 @@ export default function LoginPage() {
       }
 
       console.log("[v0] Dev bypass: Success!")
-      router.push("/")
+      router.push("/dashboard")
       router.refresh()
     } catch (err: any) {
       console.error("[v0] Dev bypass error:", err.message)
