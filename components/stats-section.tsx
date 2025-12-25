@@ -117,20 +117,20 @@ export function StatsSection() {
   }
 
   return (
-    <div className="mb-8 grid grid-cols-4 gap-6">
+    <div className="mb-6 md:mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       {/* Focus Time Today */}
-      <div className="rune-card p-6 flex flex-col justify-between min-h-48">
+      <div className="rune-card p-4 md:p-6 flex flex-col justify-between min-h-40 md:min-h-48">
         <div className="relative flex items-start justify-between">
           <div>
-            <p className="text-muted-foreground text-sm mb-3 font-medium">Focus Time Today</p>
-            <p className="text-4xl font-bold text-foreground">{formatFocusTime(stats.focusTimeToday)}</p>
+            <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3 font-medium">Focus Time Today</p>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{formatFocusTime(stats.focusTimeToday)}</p>
           </div>
           <div className="rune-icon">
-            <Timer className="w-7 h-7 text-primary" />
+            <Timer className="w-6 h-6 md:w-7 md:h-7 text-primary" />
           </div>
         </div>
-        <div className="mt-auto pt-4 flex items-end justify-center">
-          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-28 h-16">
+        <div className="mt-auto pt-3 md:pt-4 flex items-end justify-center">
+          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-24 h-14 md:w-28 md:h-16">
             <circle cx="100" cy="55" r="30" fill="none" stroke="hsl(290, 100%, 50%)" strokeWidth="2" opacity="0.4" />
             <circle cx="100" cy="55" r="20" fill="none" stroke="hsl(290, 100%, 50%)" strokeWidth="1.5" opacity="0.3" />
             <path
@@ -147,18 +147,18 @@ export function StatsSection() {
       </div>
 
       {/* Completed Today */}
-      <div className="rune-card p-6 flex flex-col justify-between min-h-48">
+      <div className="rune-card p-4 md:p-6 flex flex-col justify-between min-h-40 md:min-h-48">
         <div className="relative flex items-start justify-between">
           <div>
-            <p className="text-muted-foreground text-sm mb-3 font-medium">Completed Today</p>
-            <p className="text-4xl font-bold text-foreground">{stats.completedToday}</p>
+            <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3 font-medium">Completed Today</p>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{stats.completedToday}</p>
           </div>
           <div className="rune-icon">
-            <Star className="w-7 h-7 text-primary" />
+            <Star className="w-6 h-6 md:w-7 md:h-7 text-primary" />
           </div>
         </div>
-        <div className="mt-auto pt-4 flex items-end justify-center">
-          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-28 h-16">
+        <div className="mt-auto pt-3 md:pt-4 flex items-end justify-center">
+          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-24 h-14 md:w-28 md:h-16">
             <path
               d="M 50 70 L 60 40 L 75 55 L 100 30 L 125 55 L 140 40 L 150 70"
               fill="none"
@@ -174,36 +174,37 @@ export function StatsSection() {
       </div>
 
       {/* XP Earned Today */}
-      <div className="rune-card p-6 flex flex-col justify-between min-h-48">
+      <div className="rune-card p-4 md:p-6 flex flex-col justify-between min-h-40 md:min-h-48">
         <div className="relative flex items-start justify-between">
           <div>
-            <p className="text-muted-foreground text-sm mb-3 font-medium">XP Earned Today</p>
-            <p className="text-4xl font-bold text-foreground">{stats.xpEarnedToday}</p>
+            <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3 font-medium">XP Earned Today</p>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{stats.xpEarnedToday}</p>
           </div>
           <div className="rune-icon">
-            <Zap className="w-7 h-7 text-yellow-500" />
+            <Zap className="w-6 h-6 md:w-7 md:h-7 text-yellow-500" />
           </div>
         </div>
-        <div className="mt-auto pt-4 flex items-end justify-center">
-          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-28 h-16">
+        <div className="mt-auto pt-3 md:pt-4 flex items-end justify-center">
+          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-24 h-14 md:w-28 md:h-16">
             <path d="M 100 35 L 115 65 L 100 75 L 85 65 Z" fill="hsl(290, 100%, 50%)" opacity="0.8" />
             <circle cx="100" cy="55" r="18" fill="none" stroke="hsl(290, 100%, 50%)" strokeWidth="1.5" opacity="0.6" />
           </svg>
         </div>
       </div>
 
-      <div className="rune-card p-6 flex flex-col justify-between min-h-48">
+      {/* Leaderboard Rank */}
+      <div className="rune-card p-4 md:p-6 flex flex-col justify-between min-h-40 md:min-h-48">
         <div className="relative flex items-start justify-between">
           <div>
-            <p className="text-muted-foreground text-sm mb-3 font-medium">Leaderboard Rank</p>
-            <p className="text-4xl font-bold text-foreground">{formatRank(stats.leaderboardRank)}</p>
+            <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3 font-medium">Leaderboard Rank</p>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{formatRank(stats.leaderboardRank)}</p>
           </div>
           <div className="rune-icon">
-            <Trophy className="w-7 h-7 text-yellow-500" />
+            <Trophy className="w-6 h-6 md:w-7 md:h-7 text-yellow-500" />
           </div>
         </div>
-        <div className="mt-auto pt-4 flex items-end justify-center">
-          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-28 h-16">
+        <div className="mt-auto pt-3 md:pt-4 flex items-end justify-center">
+          <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" className="w-24 h-14 md:w-28 md:h-16">
             <path
               d="M 100 30 L 110 60 L 140 65 L 115 85 L 120 115 L 100 100 L 80 115 L 85 85 L 60 65 L 90 60 Z"
               fill="hsl(290, 100%, 50%)"

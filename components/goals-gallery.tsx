@@ -216,27 +216,29 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
 
   return (
     <>
-      <div className="mb-12">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Vision Wall</h3>
-        <p className="text-sm text-muted-foreground mb-4">Your inspiration board • Add images that motivate you</p>
+      <div className="mb-8 md:mb-12">
+        <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">Vision Wall</h3>
+        <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
+          Your inspiration board • Add images that motivate you
+        </p>
 
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
           <button
             onClick={() => setIsUploadOpen(true)}
-            className="flex-shrink-0 w-48 h-48 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 flex items-center justify-center group"
+            className="flex-shrink-0 w-40 h-40 md:w-48 md:h-48 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 flex items-center justify-center group"
           >
             <div className="flex flex-col items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
-              <div className="w-12 h-12 rounded-lg border-2 border-primary/40 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <Plus className="w-6 h-6" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg border-2 border-primary/40 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="w-5 h-5 md:w-6 md:h-6" />
               </div>
-              <span className="text-sm font-medium">Add Image</span>
+              <span className="text-xs md:text-sm font-medium">Add Image</span>
             </div>
           </button>
 
           {visionItems.map((item) => (
             <div
               key={item.id}
-              className="flex-shrink-0 w-48 h-48 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 overflow-hidden relative group"
+              className="flex-shrink-0 w-40 h-40 md:w-48 md:h-48 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 overflow-hidden relative group"
             >
               <img
                 src={item.image_url || "/placeholder.svg"}
@@ -250,36 +252,38 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                     deleteVisionItem(item.id)
                   }
                 }}
-                className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                className="absolute top-2 right-2 w-7 h-7 md:w-8 md:h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3 md:w-4 md:h-4" />
               </button>
             </div>
           ))}
 
           {visionItems.length === 0 && !loading && (
-            <div className="flex-shrink-0 w-48 h-48 border-2 border-dashed border-border rounded-xl flex items-center justify-center">
-              <p className="text-sm text-muted-foreground text-center px-4">Add your first inspiration image</p>
+            <div className="flex-shrink-0 w-40 h-40 md:w-48 md:h-48 border-2 border-dashed border-border rounded-xl flex items-center justify-center">
+              <p className="text-xs md:text-sm text-muted-foreground text-center px-4">
+                Add your first inspiration image
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="mb-12">
+      <div className="mb-8 md:mb-12">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-foreground">Active Goals</h3>
-          <Button onClick={() => setIsWizardOpen(true)} size="sm">
+          <h3 className="text-base md:text-lg font-semibold text-foreground">Active Goals</h3>
+          <Button onClick={() => setIsWizardOpen(true)} size="sm" className="text-sm">
             <Plus className="w-4 h-4 mr-2" />
             New Goal
           </Button>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
           {goals.map((goal) => (
             <div
               key={goal.id}
               onClick={() => setSelectedGoal(goal)}
-              className="flex-shrink-0 w-64 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 group relative"
+              className="flex-shrink-0 w-56 md:w-64 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 group relative"
             >
               <div className="absolute top-2 right-2 z-10">
                 <button
@@ -287,12 +291,12 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                     e.stopPropagation()
                     setShowGoalMenu(showGoalMenu === goal.id ? null : goal.id)
                   }}
-                  className="p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors backdrop-blur-sm"
+                  className="p-1.5 md:p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors backdrop-blur-sm"
                 >
-                  <MoreVertical className="w-4 h-4 text-white" />
+                  <MoreVertical className="w-3 h-3 md:w-4 md:h-4 text-white" />
                 </button>
                 {showGoalMenu === goal.id && (
-                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl min-w-[150px]">
+                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl min-w-[140px]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -300,9 +304,9 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                         setIsEditWizardOpen(true)
                         setShowGoalMenu(null)
                       }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground rounded-t-lg"
+                      className="w-full px-3 md:px-4 py-2 text-left text-xs md:text-sm hover:bg-muted flex items-center gap-2 text-foreground rounded-t-lg"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
                       Edit
                     </button>
                     <button
@@ -312,16 +316,16 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                           deleteGoal(goal.id)
                         }
                       }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500 rounded-b-lg"
+                      className="w-full px-3 md:px-4 py-2 text-left text-xs md:text-sm hover:bg-muted flex items-center gap-2 text-red-500 rounded-b-lg"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                       Delete
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="relative h-32 overflow-hidden rounded-t-2xl">
+              <div className="relative h-28 md:h-32 overflow-hidden rounded-t-2xl">
                 {goal.image_url ? (
                   <img
                     src={goal.image_url || "/placeholder.svg"}
@@ -333,8 +337,8 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40" />
               </div>
-              <div className="p-4">
-                <h4 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+              <div className="p-3 md:p-4">
+                <h4 className="font-semibold text-sm md:text-base text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
                   {goal.title}
                 </h4>
                 <div className="space-y-2">
@@ -357,9 +361,9 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
           ))}
 
           {goals.length === 0 && !loading && (
-            <div className="flex-shrink-0 w-64 border-2 border-dashed border-border rounded-xl p-6 flex items-center justify-center">
+            <div className="flex-shrink-0 w-56 md:w-64 border-2 border-dashed border-border rounded-xl p-4 md:p-6 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Your Quest Log is empty</p>
+                <p className="text-xs md:text-sm text-muted-foreground mb-2">Your Quest Log is empty</p>
                 <p className="text-xs text-muted-foreground">Start a new campaign</p>
               </div>
             </div>
@@ -433,13 +437,13 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
           onClick={() => setSelectedGoal(null)}
         >
           <div
-            className="bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl"
+            className="bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 md:p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex items-start justify-between mb-4 md:mb-6">
               <div className="flex-1 pr-4">
-                <h2 className="text-2xl font-bold text-foreground mb-2 break-all">{selectedGoal.title}</h2>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2 break-all">{selectedGoal.title}</h2>
+                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                   <div
                     className={`w-2 h-2 rounded-full ${
                       selectedGoal.timeline === "daily"
@@ -458,18 +462,18 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                 onClick={() => setSelectedGoal(null)}
                 className="ml-4 p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
               >
-                <X className="w-5 h-5 text-muted-foreground" />
+                <X className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {selectedGoal.motivation && (
-                <div className="space-y-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-4 border border-purple-500/30">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Target className="w-4 h-4 text-purple-400" />
+                <div className="space-y-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-3 md:p-4 border border-purple-500/30">
+                  <h3 className="text-xs md:text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Target className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
                     Why does this matter?
                   </h3>
-                  <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                  <p className="text-xs md:text-sm text-muted-foreground break-words whitespace-pre-wrap">
                     {selectedGoal.motivation}
                   </p>
                 </div>
@@ -477,8 +481,8 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Progress</span>
-                  <span className="text-2xl font-bold text-primary">{selectedGoal.progress}%</span>
+                  <span className="text-xs md:text-sm text-muted-foreground">Progress</span>
+                  <span className="text-xl md:text-2xl font-bold text-primary">{selectedGoal.progress}%</span>
                 </div>
                 <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
                   <div
@@ -492,21 +496,21 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 rounded-lg p-4 border border-border">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="bg-muted/50 rounded-lg p-3 md:p-4 border border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-yellow-500" />
+                    <Zap className="w-3 h-3 md:w-4 md:h-4 text-yellow-500" />
                     <span className="text-xs text-muted-foreground">XP Reward</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">{selectedGoal.max_xp} XP</p>
+                  <p className="text-lg md:text-xl font-bold text-foreground">{selectedGoal.max_xp} XP</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-4 border border-purple-500/30">
+                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-3 md:p-4 border border-purple-500/30">
                   <div className="flex items-center gap-2 mb-2">
-                    <img src="/images/aura.jpg" alt="Aura" className="w-4 h-4 rounded-full" />
+                    <img src="/images/aura.jpg" alt="Aura" className="w-3 h-3 md:w-4 md:h-4 rounded-full" />
                     <span className="text-xs text-muted-foreground">Aura Reward</span>
                   </div>
-                  <p className="text-xl font-bold text-purple-400">
+                  <p className="text-lg md:text-xl font-bold text-purple-400">
                     ~{(selectedGoal.target_hours || Math.ceil(selectedGoal.max_xp / 300)) * 10}
                   </p>
                 </div>

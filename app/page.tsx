@@ -21,16 +21,16 @@ import { Card } from "@/components/ui/card"
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <nav className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
-              <Zap className="w-6 h-6 text-primary-foreground" />
+        <nav className="container mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
+              <Zap className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold text-foreground">Quiet Room</span>
+            <span className="text-xl md:text-2xl font-bold text-foreground">Quiet Room</span>
           </div>
-          <div className="flex items-center gap-8">
+          {/* Desktop navigation */}
+          <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Features
             </a>
@@ -50,18 +50,26 @@ export default function LandingPage() {
               Enter the Game
             </Link>
           </div>
+          {/* Mobile CTA button */}
+          <Link
+            href="/auth/signup"
+            className="md:hidden px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-bold text-sm hover:shadow-lg hover:shadow-primary/50 transition-all"
+          >
+            Join
+          </Link>
         </nav>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6">
         <div className="container mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-8">
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">Turn Productivity Into An Epic Adventure</span>
+          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-primary/10 border border-primary/30 rounded-full mb-6 md:mb-8">
+            <Zap className="w-3 h-3 md:w-4 md:h-4 text-primary" />
+            <span className="text-xs md:text-sm font-semibold text-primary">
+              Turn Productivity Into An Epic Adventure
+            </span>
           </div>
 
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 text-balance">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-balance">
             Level Up Your Life,
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-primary">
@@ -69,64 +77,63 @@ export default function LandingPage() {
             </span>
           </h1>
 
-          <p className="text-xl text-muted-foreground mb-10 max-w-3xl mx-auto text-balance">
+          <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-3xl mx-auto text-balance px-4">
             Transform your daily tasks into an immersive game. Earn XP, unlock rewards, compete on leaderboards, and
             achieve your goals while having fun.
           </p>
 
-          <div className="flex items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 mb-12 md:mb-16 px-4">
             <Link
               href="/auth/signup"
-              className="px-8 py-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-primary/50 transition-all hover:scale-105 flex items-center gap-2"
+              className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl font-bold text-base md:text-lg hover:shadow-xl hover:shadow-primary/50 transition-all hover:scale-105 flex items-center justify-center gap-2"
             >
-              <Play className="w-5 h-5" />
+              <Play className="w-4 h-4 md:w-5 md:h-5" />
               Start Your Journey
             </Link>
             <a
               href="#features"
-              className="px-8 py-4 bg-card border-2 border-border text-foreground rounded-xl font-bold text-lg hover:border-primary/50 transition-all flex items-center gap-2"
+              className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-card border-2 border-border text-foreground rounded-xl font-bold text-base md:text-lg hover:border-primary/50 transition-all flex items-center justify-center gap-2"
             >
               Explore Features
-              <Zap className="w-5 h-5" />
+              <Zap className="w-4 h-4 md:w-5 md:h-5" />
             </a>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-6">
-              <Zap className="w-8 h-8 text-primary mb-3 mx-auto" />
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
+            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
+              <Zap className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2 md:mb-3 mx-auto" />
+              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
                 50M+
               </div>
-              <div className="text-sm text-muted-foreground">Total XP Earned</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Total XP Earned</div>
             </div>
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-6">
-              <Flame className="w-8 h-8 text-orange-500 mb-3 mx-auto" />
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
+            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
+              <Flame className="w-6 h-6 md:w-8 md:h-8 text-orange-500 mb-2 md:mb-3 mx-auto" />
+              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
                 125
               </div>
-              <div className="text-sm text-muted-foreground">Avg Daily Streak</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Avg Daily Streak</div>
             </div>
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-6">
-              <Crown className="w-8 h-8 text-yellow-500 mb-3 mx-auto" />
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
+            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
+              <Crown className="w-6 h-6 md:w-8 md:h-8 text-yellow-500 mb-2 md:mb-3 mx-auto" />
+              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
                 10K+
               </div>
-              <div className="text-sm text-muted-foreground">Active Players</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Active Players</div>
             </div>
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-6">
-              <Star className="w-8 h-8 text-primary mb-3 mx-auto" />
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
+            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
+              <Star className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2 md:mb-3 mx-auto" />
+              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
                 95%
               </div>
-              <div className="text-sm text-muted-foreground">Goal Success Rate</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Goal Success Rate</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6 bg-card/30">
+      <section id="features" className="py-12 md:py-20 px-4 md:px-6 bg-card/30">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-6">
@@ -348,7 +355,7 @@ export default function LandingPage() {
                   />
                 </div>
                 <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
                     <MessageSquare className="w-7 h-7 text-white" />
                   </div>
                   <h3 className="text-2xl font-bold mb-3">Q, Your AI Companion</h3>

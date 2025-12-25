@@ -368,54 +368,52 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {showXPToast && <XPToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
       {showLevelUp && <LevelUpCelebration newLevel={newLevel} onClose={() => setShowLevelUp(false)} />}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-primary mb-2">Tasks</h1>
-          <p className="text-muted-foreground">Organize and complete your daily quests</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">Tasks</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Organize and complete your daily quests</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold text-sm md:text-base"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 md:w-5 md:h-5" />
           New Task
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground mb-1">Total Tasks</p>
-          <p className="text-3xl font-bold text-foreground">{tasks.length}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Total Tasks</p>
+          <p className="text-2xl md:text-3xl font-bold text-foreground">{tasks.length}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground mb-1">Today</p>
-          <p className="text-3xl font-bold text-primary">{tasksByWhen.today.length}</p>
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Today</p>
+          <p className="text-2xl md:text-3xl font-bold text-primary">{tasksByWhen.today.length}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground mb-1">This Week</p>
-          <p className="text-3xl font-bold text-accent">{tasksByWhen["this-week"].length}</p>
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">This Week</p>
+          <p className="text-2xl md:text-3xl font-bold text-accent">{tasksByWhen["this-week"].length}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground mb-1">Someday</p>
-          <p className="text-3xl font-bold text-purple-400">{tasksByWhen.someday.length}</p>
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Someday</p>
+          <p className="text-2xl md:text-3xl font-bold text-purple-400">{tasksByWhen.someday.length}</p>
         </div>
       </div>
 
       {/* Tasks Lists */}
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading tasks...</div>
+        <div className="text-center py-12 text-muted-foreground text-sm md:text-base">Loading tasks...</div>
       ) : (
         <div className="space-y-6">
           {/* Today */}
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
+            <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
               Today
             </h2>
             <div className="space-y-3">
@@ -435,8 +433,8 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
           {/* This Week */}
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-accent" />
+            <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Calendar className="w-4 h-4 md:w-5 md:h-5 text-accent" />
               This Week
             </h2>
             <div className="space-y-3">
@@ -450,8 +448,8 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
           {/* Someday */}
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Calendar className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
               Someday
             </h2>
             <div className="space-y-3">
@@ -488,7 +486,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
                 />
                 <div className="flex-1 min-w-0">
                   <h2
-                    className={`text-2xl font-bold text-foreground mb-2 break-all ${selectedTask.completed ? "line-through" : ""}`}
+                    className={`text-2xl md:text-3xl font-bold text-foreground mb-2 break-all ${selectedTask.completed ? "line-through" : ""}`}
                   >
                     {selectedTask.title}
                   </h2>
@@ -510,32 +508,32 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
             <div className="space-y-4">
               <div className="flex flex-wrap gap-3">
                 <div
-                  className={`px-4 py-2 text-sm font-semibold rounded-full border ${getPriorityColor(selectedTask.priority)}`}
+                  className={`px-4 py-2 text-sm md:text-base font-semibold rounded-full border ${getPriorityColor(selectedTask.priority)}`}
                 >
                   Priority: {selectedTask.priority}
                 </div>
                 <div className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-white rounded-full shadow-lg flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  <span className="font-bold">+{selectedTask.xp || 3} XP</span>
+                  <Zap className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="font-bold md:text-lg">+{selectedTask.xp || 3} XP</span>
                 </div>
                 {selectedTask.category && (
                   <div className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-2 border border-emerald-500/30">
-                    <Zap className="w-4 h-4" />#{selectedTask.category}
+                    <Zap className="w-4 h-4 md:w-5 md:h-5" />#{selectedTask.category}
                   </div>
                 )}
               </div>
 
               {selectedTask.due_date && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-sm md:text-base text-muted-foreground">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5" />
                   Due: {new Date(selectedTask.due_date).toLocaleDateString()}
                 </div>
               )}
 
               {selectedTask.goal_id && (
                 <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg">
-                  <Target className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-primary font-semibold">Linked to a goal</span>
+                  <Target className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  <span className="text-sm md:text-base text-primary font-semibold">Linked to a goal</span>
                 </div>
               )}
 
@@ -547,7 +545,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
                   }}
                   className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                 >
-                  <Zap className="w-5 h-5" />
+                  <Zap className="w-5 h-5 md:w-6 md:h-6" />
                   Start Focus Session
                 </button>
               )}

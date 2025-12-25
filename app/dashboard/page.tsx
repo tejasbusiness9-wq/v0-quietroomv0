@@ -20,6 +20,7 @@ import { TaskCreationModal } from "@/components/task-creation-modal"
 import { XpToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { getLevelInfo } from "@/lib/leveling-system"
+import { Menu } from "lucide-react"
 import {
   Settings,
   Search,
@@ -111,6 +112,7 @@ export default function DashboardPage() {
   const [profileData, setProfileData] = useState<any>(null)
   const [profileStats, setProfileStats] = useState<any>(null)
   const [selectedTask, setSelectedTask] = useState<any | null>(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     fetchProfileData()
@@ -610,7 +612,7 @@ export default function DashboardPage() {
       <audio ref={audioRef} src="/images/menu.mp3" preload="auto" />
 
       <div className="flex h-screen bg-background text-foreground">
-        <aside className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col">
+        <aside className="hidden md:flex w-56 bg-sidebar border-r border-sidebar-border flex-col">
           <div className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -671,17 +673,121 @@ export default function DashboardPage() {
             </div>
           </nav>
         </aside>
+
+        {isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <aside
+              className="w-64 h-full bg-sidebar border-r border-sidebar-border flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <img src="/ui/logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-bold text-sidebar-foreground">Quiet Room</h1>
+                    <p className="text-xs text-muted-foreground">Turn focus into XP</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <nav className="flex-1 overflow-y-auto">
+                <div className="p-3">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                    Main
+                  </h2>
+                  <ul className="space-y-1">
+                    {navItems.map((item) => (
+                      <NavItem
+                        key={item.id}
+                        item={item}
+                        isActive={currentPage === item.id}
+                        onClick={() => {
+                          handlePageChange(item.id as PageType)
+                          setIsMobileMenuOpen(false)
+                        }}
+                      />
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-3 border-t border-sidebar-border">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                    Social
+                  </h2>
+                  <ul className="space-y-1">
+                    {communityItems.map((item) => (
+                      <NavItem
+                        key={item.id}
+                        item={item}
+                        isActive={currentPage === item.id}
+                        onClick={() => {
+                          handlePageChange(item.id as PageType)
+                          setIsMobileMenuOpen(false)
+                        }}
+                      />
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-3 mt-auto border-t border-sidebar-border">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                    You
+                  </h2>
+                  <ul className="space-y-1">
+                    {userItems.map((item) => (
+                      <NavItem
+                        key={item.id}
+                        item={item}
+                        isActive={currentPage === item.id}
+                        onClick={() => {
+                          handlePageChange(item.id as PageType)
+                          setIsMobileMenuOpen(false)
+                        }}
+                      />
+                    ))}
+                    <li>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <LogOut className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-medium">Sign Out</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </nav>
+            </aside>
+          </div>
+        )}
+
         <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-background border-b border-border px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
+          <div className="bg-background border-b border-border px-4 md:px-8 py-3 md:py-4 flex items-center justify-between">
+            {/* Mobile hamburger menu */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-2 md:gap-4 flex-1 md:ml-0 ml-2">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search goals, tasks, or players..."
-                  className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Search..."
+                  className="w-full pl-9 md:pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {searchQuery && searchResults.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
@@ -710,13 +816,13 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                <Settings className="w-5 h-5" />
+                <Settings className="w-4 h-4 md:w-5 md:h-5" />
               </button>
-              <div className="flex items-center gap-3 ml-4 pl-4 border-l border-border">
+              <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-border">
                 <div className="text-right">
-                  <p className="font-semibold text-foreground">{userName}</p>
+                  <p className="font-semibold text-foreground text-sm">{userName}</p>
                   <p className="text-xs text-muted-foreground">
                     Level {userLevel} • {userClass}
                   </p>
@@ -733,9 +839,23 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+              {/* Mobile user avatar only */}
+              <div className="md:hidden">
+                {user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url || "/placeholder.svg"}
+                    alt={userName}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground text-sm">
+                    {userLevel}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-8 py-8">{renderContent()}</div>
+          <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-8">{renderContent()}</div>
         </main>
         {showXPToast && <XpToast xp={xpToastData.xp} message={xpToastData.message} />}
         {showLevelUp && <LevelUpCelebration level={newLevel} />}
