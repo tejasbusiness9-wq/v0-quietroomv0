@@ -66,6 +66,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   const [xpToastData, setXpToastData] = useState({ xp: 0, message: "" })
   const [showLevelUp, setShowLevelUp] = useState(false)
   const [newLevel, setNewLevel] = useState(0)
+  const [timerStartTimestamp, setTimerStartTimestamp] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60)
   const [showXPPreview, setShowXPPreview] = useState(false)
   const [xpPreviewAmount, setXpPreviewAmount] = useState(0)
@@ -95,10 +96,57 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
   const [honorConfirmed, setHonorConfirmed] = useState(false)
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false)
+  const [showQuickStartModal, setShowQuickStartModal] = useState(true) // Added state for QuickStartModal
+
+  const startTimer = async (minutes: number) => {
+    setInitialMinutes(minutes)
+    setTimeLeft(minutes * 60)
+    setTimerStartTimestamp(Date.now())
+    setIsRunning(true)
+    setIsFullscreen(true)
+    setShowQuickStartModal(false) // Assuming this modal exists elsewhere
+
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { data: session, error } = await supabase
+      .from("zen_sessions")
+      .insert({
+        user_id: user.id,
+        duration_minutes: initialMinutes,
+        task_id: selectedTask !== "none" ? selectedTask : null,
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error creating zen session:", error)
+      return
+    }
+
+    setSessionId(session.id)
+    setSessionStartTime(Date.now())
+  }
 
   const handleGiveUp = () => {
-    console.log("[v0] Give Up button clicked")
-    setShowGiveUpConfirm(true)
+    setIsRunning(false)
+    setIsFullscreen(false)
+    setTimerStartTimestamp(null)
+    setTimeLeft(initialMinutes * 60)
+    setShowGiveUpConfirm(false) // Changed from setShowGiveUpModal
+    setSelectedGoal("none")
+    setSelectedTask("none")
+    // Reset timer without any rewards
+    toast({
+      title: "Session Ended",
+      description: "No rewards earned. Try again when ready.",
+      variant: "destructive",
+    })
   }
 
   const confirmGiveUp = () => {
@@ -267,14 +315,22 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   useEffect(() => {
     let interval: NodeJS.Timeout
 
-    if (isRunning) {
+    if (isRunning && timerStartTimestamp) {
       interval = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1)
-      }, 1000)
+        const now = Date.now()
+        const elapsed = Math.floor((now - timerStartTimestamp) / 1000)
+        const remaining = initialMinutes * 60 - elapsed
+
+        if (remaining <= 0) {
+          setTimeLeft(0)
+        } else {
+          setTimeLeft(remaining)
+        }
+      }, 100) // Check every 100ms for smoother updates
     }
 
     return () => clearInterval(interval)
-  }, [isRunning])
+  }, [isRunning, timerStartTimestamp, initialMinutes])
 
   useEffect(() => {
     if (timeLeft === 0 && isRunning) {
@@ -613,6 +669,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
     setIsFullscreen(true)
     setIsRunning(true)
+    setTimerStartTimestamp(Date.now()) // Set the start time for accurate calculation
 
     const { data: session, error } = await supabase
       .from("zen_sessions")
