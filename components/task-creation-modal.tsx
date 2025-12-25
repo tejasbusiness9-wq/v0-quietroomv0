@@ -21,9 +21,17 @@ interface TaskCreationModalProps {
   isOpen: boolean
   onClose: () => void
   onCreateTask?: (task: NewTask) => void
+  initialData?: Partial<NewTask>
+  mode?: "create" | "edit"
 }
 
-export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreationModalProps) {
+export function TaskCreationModal({
+  isOpen,
+  onClose,
+  onCreateTask,
+  initialData,
+  mode = "create",
+}: TaskCreationModalProps) {
   const [showMoreOptions, setShowMoreOptions] = useState(false)
   const [newTask, setNewTask] = useState<NewTask>({
     name: "",
@@ -38,6 +46,25 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
   const [tagInput, setTagInput] = useState("")
   const [goals, setGoals] = useState<any[]>([])
   const [loadingGoals, setLoadingGoals] = useState(false)
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setNewTask({
+        name: initialData.name || "",
+        when: initialData.when || "today",
+        description: initialData.description || "",
+        priority: initialData.priority || "medium",
+        effort: initialData.effort || "medium",
+        linkedGoal: initialData.linkedGoal || "",
+        tags: initialData.tags || [],
+        xp: initialData.xp || 3,
+      })
+      // Show more options if there's additional data
+      if (initialData.description || initialData.linkedGoal || (initialData.tags && initialData.tags.length > 0)) {
+        setShowMoreOptions(true)
+      }
+    }
+  }, [isOpen, initialData])
 
   useEffect(() => {
     if (isOpen) {
@@ -118,7 +145,7 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
       <div className="bg-card border border-border rounded-2xl max-w-lg w-full shadow-2xl shadow-primary/20">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-2xl font-bold text-foreground">Create Task</h2>
+          <h2 className="text-2xl font-bold text-foreground">{mode === "edit" ? "Edit Task" : "Create Task"}</h2>
           <button
             onClick={() => {
               resetForm()
@@ -299,7 +326,7 @@ export function TaskCreationModal({ isOpen, onClose, onCreateTask }: TaskCreatio
             disabled={!newTask.name.trim() || newTask.name.length > 60 || newTask.description.length > 200}
             className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Task
+            {mode === "edit" ? "Update Task" : "Create Task"}
           </button>
         </div>
       </div>

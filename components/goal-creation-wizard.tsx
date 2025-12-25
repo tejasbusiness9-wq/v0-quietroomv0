@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { ChevronLeft, ChevronRight, Upload, X } from "lucide-react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 
 interface WizardStep {
   step: number
@@ -23,9 +23,17 @@ interface GoalCreationWizardProps {
   isOpen: boolean
   onClose: () => void
   onCreateGoal?: (goal: NewGoal) => void
+  initialData?: Partial<NewGoal>
+  mode?: "create" | "edit"
 }
 
-export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreationWizardProps) {
+export function GoalCreationWizard({
+  isOpen,
+  onClose,
+  onCreateGoal,
+  initialData,
+  mode = "create",
+}: GoalCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [newGoal, setNewGoal] = useState<NewGoal>({
     title: "",
@@ -44,6 +52,19 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
     { step: 4, title: "How much time will this take?", description: "Set your target hours" },
     { step: 5, title: "Pick an inspiring image", description: "Make it visual" },
   ]
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setNewGoal({
+        title: initialData.title || "",
+        category: (initialData.category as "weekly" | "monthly" | "yearly") || "monthly",
+        motivation: initialData.motivation || "",
+        target_hours: initialData.target_hours || 10,
+        image: initialData.image || "",
+      })
+      setImagePreview(initialData.image || null)
+    }
+  }, [initialData, isOpen])
 
   const handleNext = () => {
     if (currentStep < steps.length) {
@@ -305,7 +326,7 @@ export function GoalCreationWizard({ isOpen, onClose, onCreateGoal }: GoalCreati
               disabled={(currentStep === 1 && !newGoal.title) || (currentStep === 3 && !newGoal.motivation)}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {currentStep === steps.length ? "Create Goal" : "Next"}
+              {currentStep === steps.length ? (mode === "edit" ? "Update Goal" : "Create Goal") : "Next"}
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

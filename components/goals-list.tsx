@@ -1,8 +1,9 @@
 "use client"
 
-import { ChevronDown, X, Calendar, Zap, Target } from "lucide-react"
+import { ChevronDown, X, Calendar, Zap, Target, MoreVertical, Edit2, Trash2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { GoalCreationWizard } from "@/components/goal-creation-wizard"
 
 interface Goal {
   id: string
@@ -16,6 +17,7 @@ interface Goal {
   target_hours?: number
   description?: string
   motivation?: string
+  image_url?: string
 }
 
 interface GoalsListProps {
@@ -32,6 +34,9 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     yearly: false,
   })
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
+  const [showGoalMenu, setShowGoalMenu] = useState<string | null>(null)
+  const [goalToEdit, setGoalToEdit] = useState<Goal | null>(null)
+  const [isEditWizardOpen, setIsEditWizardOpen] = useState(false)
 
   useEffect(() => {
     fetchGoals()
@@ -75,6 +80,47 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     }))
   }
 
+  const deleteGoal = async (id: string) => {
+    const supabase = getSupabaseBrowserClient()
+    const { error } = await supabase.from("goals").delete().eq("id", id)
+
+    if (!error) {
+      fetchGoals()
+      setShowGoalMenu(null)
+      setSelectedGoal(null)
+    }
+  }
+
+  const handleEditGoal = async (updatedGoal: any) => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user || !goalToEdit) return
+
+    const calculated_max_xp = updatedGoal.target_hours * 60 * 5
+
+    const { error } = await supabase
+      .from("goals")
+      .update({
+        title: updatedGoal.title,
+        timeline: updatedGoal.category,
+        motivation: updatedGoal.motivation,
+        image_url: updatedGoal.image,
+        target_hours: updatedGoal.target_hours,
+        max_xp: calculated_max_xp,
+      })
+      .eq("id", goalToEdit.id)
+
+    if (!error) {
+      fetchGoals()
+      setIsEditWizardOpen(false)
+      setGoalToEdit(null)
+      setShowGoalMenu(null)
+    }
+  }
+
   const getDaysRemaining = (targetDate?: string) => {
     if (!targetDate) return undefined
     const now = new Date()
@@ -94,40 +140,82 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     const estimatedAura = estimatedHours * 10
 
     return (
-      <button
-        onClick={() => setSelectedGoal(goal)}
-        className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors text-left group w-full"
-      >
-        <div className="flex items-start justify-between mb-3">
-          <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors flex-1">
-            {truncateText(goal.title, 30)}
-          </h4>
-          {daysRemaining !== undefined && (
-            <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">{daysRemaining} days left</span>
-          )}
-        </div>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="text-primary font-semibold">{goal.progress}%</span>
-          </div>
-          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-300"
-              style={{ width: `${goal.progress}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              {goal.xp} / {goal.max_xp} XP
-            </p>
-            <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full">
-              <img src="/images/aura.jpg" alt="Aura" className="w-3 h-3 rounded-full" />
-              <span className="text-xs font-semibold text-purple-400">~{estimatedAura}</span>
+      <div className="relative">
+        <button
+          onClick={() => setSelectedGoal(goal)}
+          className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors text-left group w-full"
+        >
+          <div className="flex items-start justify-between mb-3">
+            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors flex-1">
+              {truncateText(goal.title, 30)}
+            </h4>
+            <div className="flex items-center gap-2">
+              {daysRemaining !== undefined && (
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{daysRemaining} days left</span>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowGoalMenu(showGoalMenu === goal.id ? null : goal.id)
+                }}
+                className="p-1 hover:bg-muted rounded transition-colors"
+              >
+                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
           </div>
-        </div>
-      </button>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="text-primary font-semibold">{goal.progress}%</span>
+            </div>
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-300"
+                style={{ width: `${goal.progress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {goal.xp} / {goal.max_xp} XP
+              </p>
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full">
+                <img src="/images/aura.jpg" alt="Aura" className="w-3 h-3 rounded-full" />
+                <span className="text-xs font-semibold text-purple-400">~{estimatedAura}</span>
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {showGoalMenu === goal.id && (
+          <div className="absolute right-2 top-12 bg-card border border-border rounded-lg shadow-xl z-10 min-w-[150px]">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setGoalToEdit(goal)
+                setIsEditWizardOpen(true)
+                setShowGoalMenu(null)
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground rounded-t-lg"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm("Are you sure you want to delete this goal?")) {
+                  deleteGoal(goal.id)
+                }
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500 rounded-b-lg"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -168,7 +256,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
 
   return (
     <div className="mt-8">
-      {/* Daily Goals */}
       {goalsByTimeline.daily.length > 0 && (
         <>
           <SectionHeader
@@ -187,7 +274,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
         </>
       )}
 
-      {/* Weekly Goals */}
       {goalsByTimeline.weekly.length > 0 && (
         <>
           <SectionHeader
@@ -206,7 +292,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
         </>
       )}
 
-      {/* Monthly Goals */}
       {goalsByTimeline.monthly.length > 0 && (
         <>
           <SectionHeader
@@ -225,7 +310,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
         </>
       )}
 
-      {/* Yearly Goals */}
       {goalsByTimeline.yearly.length > 0 && (
         <>
           <SectionHeader
@@ -251,7 +335,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
         </div>
       )}
 
-      {/* Goal Detail Modal */}
       {selectedGoal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -288,7 +371,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
             </div>
 
             <div className="space-y-6">
-              {/* Description Section */}
               {selectedGoal.description && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">Description</h3>
@@ -298,7 +380,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
                 </div>
               )}
 
-              {/* Motivation Section */}
               {selectedGoal.motivation && (
                 <div className="space-y-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-4 border border-purple-500/30">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -311,7 +392,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
                 </div>
               )}
 
-              {/* Progress Section */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Progress</span>
@@ -329,7 +409,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
                 </div>
               </div>
 
-              {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-muted/50 rounded-lg p-4 border border-border">
                   <div className="flex items-center gap-2 mb-2">
@@ -350,7 +429,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
                 </div>
               </div>
 
-              {/* Timeline Info */}
               {selectedGoal.target_date && (
                 <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border">
                   <Calendar className="w-5 h-5 text-primary" />
@@ -366,6 +444,25 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {goalToEdit && (
+        <GoalCreationWizard
+          isOpen={isEditWizardOpen}
+          onClose={() => {
+            setIsEditWizardOpen(false)
+            setGoalToEdit(null)
+          }}
+          onCreateGoal={handleEditGoal}
+          initialData={{
+            title: goalToEdit.title,
+            category: goalToEdit.timeline,
+            motivation: goalToEdit.motivation,
+            image: goalToEdit.image_url,
+            target_hours: goalToEdit.target_hours,
+          }}
+          mode="edit"
+        />
       )}
     </div>
   )

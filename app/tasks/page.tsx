@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, Calendar, Target, Zap, X } from "lucide-react"
+import { Plus, Calendar, Target, Zap, X, MoreVertical, Edit2, Trash2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
@@ -22,6 +22,9 @@ interface Task {
 
 export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (taskId: string) => void }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null)
+  const [showTaskMenu, setShowTaskMenu] = useState<string | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [showXPToast, setShowXPToast] = useState(false)
@@ -159,6 +162,62 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     }
   }
 
+  const deleteTask = async (id: string) => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { error } = await supabase.from("tasks").delete().eq("id", id)
+
+    if (!error) {
+      fetchTasks()
+      setSelectedTask(null)
+      setShowTaskMenu(null)
+    }
+  }
+
+  const handleEditTask = async (updatedTask: any) => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user || !taskToEdit) return
+
+    let dueDate = taskToEdit.due_date
+    if (updatedTask.when === "today") {
+      dueDate = new Date().toISOString()
+    } else if (updatedTask.when === "this-week") {
+      const threeDaysFromNow = new Date()
+      threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
+      dueDate = threeDaysFromNow.toISOString()
+    } else if (updatedTask.when === "someday") {
+      dueDate = null
+    }
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        title: updatedTask.name,
+        description: updatedTask.description,
+        priority: updatedTask.priority,
+        due_date: dueDate,
+        goal_id: updatedTask.linkedGoal || null,
+        category: updatedTask.tags?.join(",") || null,
+      })
+      .eq("id", taskToEdit.id)
+
+    if (!error) {
+      fetchTasks()
+      setIsEditModalOpen(false)
+      setTaskToEdit(null)
+      setShowTaskMenu(null)
+    }
+  }
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "urgent":
@@ -202,7 +261,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     <div
       className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 cursor-pointer ${
         task.completed ? "opacity-50" : ""
-      }`}
+      } relative`}
       onClick={() => setSelectedTask(task)}
     >
       <div className="flex items-start gap-4">
@@ -252,16 +311,57 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
           </div>
         </div>
         {!task.completed && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleFocusTask(task.id)
-            }}
-            className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-          >
-            <Zap className="w-5 h-5" />
-            Start Focus Session
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleFocusTask(task.id)
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+            >
+              <Zap className="w-5 h-5" />
+              Start Focus Session
+            </button>
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowTaskMenu(showTaskMenu === task.id ? null : task.id)
+                }}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <MoreVertical className="w-5 h-5 text-muted-foreground" />
+              </button>
+              {showTaskMenu === task.id && (
+                <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-10 min-w-[150px]">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setTaskToEdit(task)
+                      setIsEditModalOpen(true)
+                      setShowTaskMenu(null)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm("Are you sure you want to delete this task?")) {
+                        deleteTask(task.id)
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -457,6 +557,31 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
       )}
 
       <TaskCreationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateTask={handleCreateTask} />
+      {taskToEdit && (
+        <TaskCreationModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setTaskToEdit(null)
+          }}
+          onCreateTask={handleEditTask}
+          initialData={{
+            name: taskToEdit.title,
+            description: taskToEdit.description || "",
+            priority: taskToEdit.priority,
+            tags: taskToEdit.category?.split(",").filter(Boolean) || [],
+            linkedGoal: taskToEdit.goal_id || "",
+            when: taskToEdit.due_date
+              ? isToday(taskToEdit.due_date)
+                ? "today"
+                : isThisWeek(taskToEdit.due_date)
+                  ? "this-week"
+                  : "someday"
+              : "someday",
+          }}
+          mode="edit"
+        />
+      )}
     </div>
   )
 }
