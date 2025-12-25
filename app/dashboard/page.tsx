@@ -22,8 +22,6 @@ import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { getLevelInfo } from "@/lib/leveling-system"
 import { Menu } from "lucide-react"
 import {
-  Settings,
-  Search,
   Target,
   CheckSquare,
   Trophy,
@@ -38,6 +36,7 @@ import {
   X,
   Timer,
 } from "lucide-react"
+import { StreakCounter } from "@/components/streak-counter"
 
 type PageType =
   | "dashboard"
@@ -100,9 +99,7 @@ export default function DashboardPage() {
   const [loadingTasks, setLoadingTasks] = useState(true)
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
   const [zenModeTaskId, setZenModeTaskId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
+
   const audioRef = useRef<HTMLAudioElement>(null)
   const [xpToastData, setXpToastData] = useState({ xp: 0, message: "" })
   const [showXPToast, setShowXPToast] = useState(false)
@@ -503,56 +500,6 @@ export default function DashboardPage() {
     }
   }
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query)
-
-    if (query.trim().length < 2) {
-      setSearchResults([])
-      return
-    }
-
-    setIsSearching(true)
-
-    if (!user) {
-      setIsSearching(false)
-      return
-    }
-
-    try {
-      const [tasksRes, goalsRes, profilesRes] = await Promise.all([
-        supabase
-          .from("tasks")
-          .select("id, title, description, priority")
-          .eq("user_id", user.id)
-          .ilike("title", `%${query}%`)
-          .limit(5),
-        supabase
-          .from("goals")
-          .select("id, title, description, category")
-          .eq("user_id", user.id)
-          .ilike("title", `%${query}%`)
-          .limit(5),
-        supabase
-          .from("profiles")
-          .select("id, username, display_name, level")
-          .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-          .limit(5),
-      ])
-
-      const results = [
-        ...(tasksRes.data || []).map((t) => ({ ...t, type: "task" })),
-        ...(goalsRes.data || []).map((g) => ({ ...g, type: "goal" })),
-        ...(profilesRes.data || []).map((p) => ({ ...p, type: "profile" })),
-      ]
-
-      setSearchResults(results)
-    } catch (error) {
-      console.error("[v0] Search error:", error)
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
   const handlePageChange = (page: PageType) => {
     setCurrentPage(page)
     audioRef.current?.play().catch(() => {})
@@ -618,7 +565,9 @@ export default function DashboardPage() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
                 <img src="/ui/logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
               </div>
-              <h1 className="text-lg font-bold text-sidebar-foreground">Quiet Room</h1>
+              <h1 className="text-lg font-bold text-sidebar-foreground">Quiet Room <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
+    Beta
+  </span></h1>
             </div>
             <p className="text-xs text-muted-foreground ml-10">Turn focus into XP</p>
           </div>
@@ -770,56 +719,18 @@ export default function DashboardPage() {
         )}
 
         <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-background border-b border-border px-4 md:px-8 py-3 md:py-4 flex items-center justify-between">
-            {/* Mobile hamburger menu */}
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-
-            <div className="flex items-center gap-2 md:gap-4 flex-1 md:ml-0 ml-2">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search..."
-                  className="w-full pl-9 md:pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                {searchQuery && searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
-                    {searchResults.map((result) => (
-                      <div
-                        key={result.id}
-                        className="p-3 hover:bg-muted/50 cursor-pointer border-b border-border last:border-0"
-                      >
-                        <div className="flex items-center gap-2">
-                          {result.type === "task" && <CheckSquare className="w-4 h-4 text-primary" />}
-                          {result.type === "goal" && <Target className="w-4 h-4 text-accent" />}
-                          {result.type === "profile" && <User className="w-4 h-4 text-muted-foreground" />}
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">
-                              {result.title || result.username || result.display_name}
-                            </p>
-                            {result.description && (
-                              <p className="text-xs text-muted-foreground truncate">{result.description}</p>
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground capitalize">{result.type}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+          <div className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 border-b border-border bg-card">
+            <div className="flex items-center gap-2 md:gap-4">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="md:hidden p-2 hover:bg-accent rounded-lg transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <StreakCounter userId={user?.id || ""} />
             </div>
             <div className="flex items-center gap-2 md:gap-4">
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                <Settings className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
               <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-border">
                 <div className="text-right">
                   <p className="font-semibold text-foreground text-sm">{userName}</p>
@@ -839,7 +750,6 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-              {/* Mobile user avatar only */}
               <div className="md:hidden">
                 {user?.user_metadata?.avatar_url ? (
                   <img
