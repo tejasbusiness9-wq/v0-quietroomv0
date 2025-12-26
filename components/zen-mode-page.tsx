@@ -386,6 +386,11 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
     const xpEarned = Math.floor(sessionData.minutes * 5)
     const auraEarned = Math.floor(sessionData.minutes / 5)
 
+    console.log("[v0] Zen session completed:")
+    console.log("[v0] Minutes:", sessionData.minutes)
+    console.log("[v0] Aura calculation: Math.floor(" + sessionData.minutes + " / 5) =", auraEarned)
+    console.log("[v0] XP earned:", xpEarned)
+
     const { data: currentProfile } = await supabase
       .from("profiles")
       .select("total_xp, current_xp, level, xp_to_next_level, aura")
@@ -825,9 +830,9 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
               {activeEnvironment && <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />}
 
               <div className="relative z-10 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">
+                    <label className="text-xs md:text-sm text-muted-foreground">
                       Route XP to goal: <span className="text-xs">(Personal XP Only)</span>
                     </label>
                     <Select value={selectedGoal} onValueChange={setSelectedGoal}>
@@ -846,7 +851,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Select task:</label>
+                    <label className="text-xs md:text-sm text-muted-foreground">Select task:</label>
                     <Select value={selectedTask} onValueChange={setSelectedTask}>
                       <SelectTrigger className="bg-background/50 border-purple-500/30">
                         <SelectValue placeholder="Select a task" />

@@ -146,39 +146,39 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
             {/* Zen Mode Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-all">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
+            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="flex-shrink-0 w-full md:w-auto">
                   <Image
                     src="/zen-meditation-timer-interface.jpg"
                     alt="Zen Mode Timer"
                     width={300}
                     height={200}
-                    className="rounded-2xl border border-border"
+                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
                   />
                 </div>
-                <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-4">
-                    <Timer className="w-7 h-7 text-white" />
+                <div className="w-full">
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
+                    <Timer className="w-6 h-6 md:w-7 md:h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Zen Mode</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Zen Mode</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Enter deep focus with beautiful backgrounds and ambient sounds. Earn 5 XP per minute and 1 Aura per
                     5 minutes. Complete sessions to maximize rewards!
                   </p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Customizable timer (15-60 min)</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Beautiful animated backgrounds</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Ambient soundscapes</span>
                     </li>
                   </ul>
@@ -187,37 +187,37 @@ export default function LandingPage() {
             </Card>
 
             {/* Quest System Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-all">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
+            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="flex-shrink-0 w-full md:w-auto">
                   <Image
                     src="/task-dashboard-with-quest-cards.jpg"
                     alt="Quest System"
                     width={300}
                     height={200}
-                    className="rounded-2xl border border-border"
+                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
                   />
                 </div>
-                <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-primary to-purple-600 rounded-2xl flex items-center justify-center mb-4">
-                    <Target className="w-7 h-7 text-white" />
+                <div className="w-full">
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary to-purple-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
+                    <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Quest System</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Quest System</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Complete tasks to earn XP. Regular tasks give 3 XP, but link them to goals for bonus rewards and
                     track your progress across multiple quests.
                   </p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Create unlimited tasks</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Link tasks to goals</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Track daily progress</span>
                     </li>
                   </ul>
@@ -226,37 +226,37 @@ export default function LandingPage() {
             </Card>
 
             {/* Vision & Goals Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-all">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
+            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="flex-shrink-0 w-full md:w-auto">
                   <Image
                     src="/goal-tracking-dashboard.jpg"
                     alt="Vision & Goals"
                     width={300}
                     height={200}
-                    className="rounded-2xl border border-border"
+                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
                   />
                 </div>
-                <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-4">
-                    <Target className="w-7 h-7 text-white" />
+                <div className="w-full">
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
+                    <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Vision & Goals</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Vision & Goals</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Create meaningful goals with our 5-step wizard. Add your vision wall for inspiration, set clear
                     deadlines, and track progress with beautiful stats.
                   </p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Personal vision wall</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>5-step goal creation wizard</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Progress tracking & streaks</span>
                     </li>
                   </ul>
@@ -265,37 +265,37 @@ export default function LandingPage() {
             </Card>
 
             {/* Global Leaderboard Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-all">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
+            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="flex-shrink-0 w-full md:w-auto">
                   <Image
                     src="/leaderboard-rankings-interface.png"
                     alt="Global Leaderboard"
                     width={300}
                     height={200}
-                    className="rounded-2xl border border-border"
+                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
                   />
                 </div>
-                <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl flex items-center justify-center mb-4">
-                    <Trophy className="w-7 h-7 text-white" />
+                <div className="w-full">
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
+                    <Trophy className="w-6 h-6 md:w-7 md:h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Global Leaderboard</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Global Leaderboard</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Compete with players worldwide. Climb the ranks to earn daily Aura rewards. Top 10 get 100 Aura,
                     ranks 11-50 get 50 Aura, and 51-100 get 20 Aura daily!
                   </p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Ranked by total XP earned</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Daily Aura rewards</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Player titles & badges</span>
                     </li>
                   </ul>
@@ -304,37 +304,37 @@ export default function LandingPage() {
             </Card>
 
             {/* Rewards Store Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-all">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
+            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="flex-shrink-0 w-full md:w-auto">
                   <Image
                     src="/rewards-store-items.jpg"
                     alt="Rewards Store"
                     width={300}
                     height={200}
-                    className="rounded-2xl border border-border"
+                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
                   />
                 </div>
-                <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mb-4">
-                    <Gift className="w-7 h-7 text-white" />
+                <div className="w-full">
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
+                    <Gift className="w-6 h-6 md:w-7 md:h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Rewards Store</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Rewards Store</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Spend your hard-earned Aura on real rewards! Buy new backgrounds, ambient sounds, and even real-life
                     permissions like gaming time or cheat meals.
                   </p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Unlock premium backgrounds</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>New ambient soundscapes</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Real-life permission rewards</span>
                     </li>
                   </ul>
@@ -343,37 +343,37 @@ export default function LandingPage() {
             </Card>
 
             {/* Q AI Companion Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-all">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
+            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="flex-shrink-0 w-full md:w-auto">
                   <Image
                     src="/ai-chat-interface.png"
                     alt="Q AI Companion"
                     width={300}
                     height={200}
-                    className="rounded-2xl border border-border"
+                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
                   />
                 </div>
-                <div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
-                    <MessageSquare className="w-7 h-7 text-white" />
+                <div className="w-full">
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
+                    <MessageSquare className="w-6 h-6 md:w-7 md:h-7 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Q, Your AI Companion</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Q, Your AI Companion</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Meet Q, your gamified AI assistant. Ask questions, get advice in gaming slang, and let Q create
                     tasks and goals for you with agent capabilities.
                   </p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Gamified conversational AI</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Auto-create tasks & goals</span>
                     </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <li className="flex items-center gap-2 text-xs md:text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>24/7 productivity coaching</span>
                     </li>
                   </ul>
