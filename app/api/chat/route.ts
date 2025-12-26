@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai"
 import { streamText } from "ai"
 
-// Groq is fast and works great on the Edge
+// Groq works on Edge
 export const runtime = "edge"
 
 const SYSTEM_PROMPT = `You are the 'Quiet Room Mentor', a strategic performance coach and the official guide for the Quiet Room App.
@@ -97,18 +97,17 @@ export async function POST(req: Request) {
     const { messages } = await req.json()
 
     // 2. SAFETY CHECK: Only send the last 10 messages
-    // This prevents you from hitting the token limit if the chat gets huge.
     const recentMessages = messages.slice(-10)
 
     // 3. STREAM TEXT (Using Vercel AI SDK Standard)
     const result = streamText({
-      // Llama 3.3 70B is smart. If it ever fails, swap to 'llama-3.1-8b-instant'
       model: groq("llama-3.3-70b-versatile"), 
       system: SYSTEM_PROMPT,
       messages: recentMessages,
     })
 
-    return result.toDataStreamResponse()
+    // ⚡ FIX: Use toTextStreamResponse() to send plain text
+    return result.toTextStreamResponse()
 
   } catch (error: any) {
     console.error("[Groq] Chat API error:", error)
