@@ -398,22 +398,33 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       .maybeSingle()
 
     if (currentProfile) {
-      const newTotalXP = currentProfile.total_xp + xpEarned
-      let newCurrentXP = currentProfile.current_xp + xpEarned
-      let newLevel = currentProfile.level
-      let newXPToNextLevel = currentProfile.xp_to_next_level
+      const currentAura = Number(currentProfile.aura) || 0
+      const currentTotalXP = Number(currentProfile.total_xp) || 0
+      const currentCurrentXP = Number(currentProfile.current_xp) || 0
+      const currentLevel = Number(currentProfile.level) || 1
+      const currentXPToNextLevel = Number(currentProfile.xp_to_next_level) || 150
+
+      const newTotalXP = currentTotalXP + xpEarned
+      let newCurrentXP = currentCurrentXP + xpEarned
+      let newLevel = currentLevel
+      let newXPToNextLevel = currentXPToNextLevel
       let levelsGained = 0
 
       while (newCurrentXP >= newXPToNextLevel) {
-        newLevel += 1
-        levelsGained += 1
+        newLevel++
+        levelsGained++
         newCurrentXP -= newXPToNextLevel
         newXPToNextLevel = Math.floor(150 * Math.pow(1.15, newLevel - 1))
       }
 
       const levelUpAura = levelsGained * 50
       const totalAuraGained = auraEarned + levelUpAura
-      const newAura = currentProfile.aura + totalAuraGained
+      const newAura = currentAura + totalAuraGained
+
+      console.log("[v0] Aura update debug:")
+      console.log("[v0] Current aura:", currentAura, typeof currentAura)
+      console.log("[v0] Total aura gained:", totalAuraGained, typeof totalAuraGained)
+      console.log("[v0] New aura:", newAura, typeof newAura)
 
       await supabase
         .from("profiles")
