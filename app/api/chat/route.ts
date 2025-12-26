@@ -1,6 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { createOpenAI } from "@ai-sdk/openai"
+import { streamText } from "ai"
 
-export const runtime = "nodejs"
+// Groq is fast and works great on the Edge
+export const runtime = "edge"
 
 const SYSTEM_PROMPT = `You are the 'Quiet Room Mentor', a strategic performance coach and the official guide for the Quiet Room App.
 
@@ -66,7 +68,7 @@ Here is how to fix your loadout in Quiet Room:
 Don't just 'try' to study. Go to the Zen Tab. Select 'Rain' sound. Set the timer for 25 minutes. If you quit, you lose all XP. The fear of losing XP will keep you locked in.
 
 2. SET A VISION ANCHOR
-Go to the Goals Tab. Add an image to your Vision Wall that shows WHY you are studying (e.g., a dream car or university). Look at it before you start.
+Go to the Goals Tab. Add an image to your Vision Wall that shows WHY you are studying.
 
 3. FARM AURA FOR REWARDS
 Tell yourself: If I complete 2 hours of Deep Work (600 XP), I will earn enough Aura to buy a 'Doom Scroll Permission' from the Shop tonight. Earn your rest.
@@ -78,78 +80,43 @@ TONE CHECK:
 - Simple English.
 - Clean spacing.
 - No asterisks.
-- Reference "Quiet Room" features naturally.`;
+- Reference "Quiet Room" features naturally.
+
+BOUNDARIES (NON-NEGOTIABLE):
+- NO ROMANCE/NSFW: If a user sends sexual, romantic, or inappropriate messages, DO NOT engage. 
+- REPLY INSTANTLY WITH: "SYSTEM ALERT: Distraction detected. Focus on your grind, Operator. This behavior keeps you at bottom."`
+
+// 1. Initialize Groq (using OpenAI SDK wrapper)
+const groq = createOpenAI({
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY,
+})
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json()
 
-    const apiKey = process.env.gemini || process.env.GEMINI_API_KEY
+    // 2. SAFETY CHECK: Only send the last 10 messages
+    // This prevents you from hitting the token limit if the chat gets huge.
+    const recentMessages = messages.slice(-10)
 
-    if (!apiKey) {
-      throw new Error("Gemini API key not found in environment variables")
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: SYSTEM_PROMPT,
+    // 3. STREAM TEXT (Using Vercel AI SDK Standard)
+    const result = streamText({
+      // Llama 3.3 70B is smart. If it ever fails, swap to 'llama-3.1-8b-instant'
+      model: groq("llama-3.3-70b-versatile"), 
+      system: SYSTEM_PROMPT,
+      messages: recentMessages,
     })
 
-    // Convert messages to Gemini format
-    const chatHistory = messages.slice(0, -1).map((msg: any) => ({
-      role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content }],
-    }))
+    return result.toDataStreamResponse()
 
-    const userMessage = messages[messages.length - 1].content
-
-    const chat = model.startChat({
-      history: chatHistory,
-    })
-
-    const result = await chat.sendMessageStream(userMessage)
-
-    // Create a readable stream
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of result.stream) {
-            const text = chunk.text()
-            controller.enqueue(new TextEncoder().encode(text))
-          }
-          controller.close()
-        } catch (error) {
-          controller.error(error)
-        }
-      },
-    })
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-      },
-    })
   } catch (error: any) {
-    console.error("[v0] Chat API error:", error)
-
-    // Handle specific Gemini errors
-    let errorMessage = "Failed to process chat request"
-    let errorDetails = error?.message || "Unknown error"
-
-    if (error?.message?.includes("RESOURCE_EXHAUSTED")) {
-      errorMessage = "API quota exceeded"
-      errorDetails = "Your Gemini API free tier quota has been reached. Please wait 24 hours or upgrade to a paid plan."
-    } else if (error?.message?.includes("API key")) {
-      errorMessage = "API key error"
-      errorDetails = "Please check that your Gemini API key is valid and properly configured."
-    }
+    console.error("[Groq] Chat API error:", error)
 
     return new Response(
       JSON.stringify({
-        error: errorMessage,
-        details: errorDetails,
+        error: "System Rebooting...",
+        details: "High traffic on free tier. Try again in 10 seconds.",
       }),
       {
         status: 500,

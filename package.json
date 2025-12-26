@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "2.0.46",
+    "@ai-sdk/openai": "3.0.1",
     "@emotion/is-prop-valid": "latest",
     "@google/generative-ai": "0.24.1",
     "@hookform/resolvers": "^3.10.0",
