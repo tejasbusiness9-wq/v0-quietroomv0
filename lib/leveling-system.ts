@@ -12,7 +12,7 @@ export interface LevelInfo {
 }
 
 export const LEVEL_DATA: Record<number, LevelInfo> = {
-  // Tier 1: The Noise (Levels 1-9)
+  // Tier 1: The Noise (Levels 1-9) -> ✅ GOOD
   1: {
     level: 1,
     name: "The Tourist",
@@ -44,7 +44,7 @@ export const LEVEL_DATA: Record<number, LevelInfo> = {
     glow: "shadow-blue-400/50",
   },
 
-  // Tier 2: The Awakening (Levels 10-24)
+  // Tier 2: The Awakening (Levels 10-24) -> ✅ GOOD
   10: {
     level: 10,
     name: "Noise Walker",
@@ -76,7 +76,7 @@ export const LEVEL_DATA: Record<number, LevelInfo> = {
     glow: "shadow-emerald-400/50",
   },
 
-  // Tier 3: The Grind (Levels 25-49)
+  // Tier 3: The Grind (Levels 25-49) -> ✅ GOOD
   25: {
     level: 25,
     name: "Ronin",
@@ -108,7 +108,7 @@ export const LEVEL_DATA: Record<number, LevelInfo> = {
     glow: "shadow-orange-400/50",
   },
 
-  // Tier 4: The Mastery (Levels 50-74)
+  // Tier 4: The Mastery (Levels 50-74) -> 🛠️ TWEAKED
   50: {
     level: 50,
     name: "The Architect",
@@ -121,7 +121,7 @@ export const LEVEL_DATA: Record<number, LevelInfo> = {
   },
   60: {
     level: 60,
-    name: "Shadow Operator",
+    name: "Phantom Operator", // Changed from "Shadow Operator"
     title: "Move in silence. Strike with precision.",
     tier: "The Mastery",
     tierNumber: 4,
@@ -140,7 +140,7 @@ export const LEVEL_DATA: Record<number, LevelInfo> = {
     glow: "shadow-violet-400/50",
   },
 
-  // Tier 5: The Legend (Levels 75-99)
+  // Tier 5: The Legend (Levels 75-99) -> ✅ GOOD
   75: {
     level: 75,
     name: "Chronos",
@@ -172,14 +172,14 @@ export const LEVEL_DATA: Record<number, LevelInfo> = {
     glow: "shadow-red-400/50",
   },
 
-  // Tier 6: The Impossible Rank (Level 100)
+  // Tier 6: The Endgame (Level 100) -> 👑 NEW & UNIQUE
   100: {
     level: 100,
-    name: "The Quiet One",
-    title: "You have completed the game. You no longer need this app. You are free.",
+    name: "Sovereign of Silence", // Unique to Quiet Room, still badass
+    title: "The System no longer guides you. It serves you.",
     tier: "The Impossible Rank",
     tierNumber: 6,
-    description: "Transcendence achieved.",
+    description: "You have transcended the need for motivation. You are the storm.",
     color: "text-white",
     glow: "shadow-white/80",
   },
@@ -243,21 +243,61 @@ export function getLevelInfo(level: number): LevelInfo {
   }
 }
 
+// Old formula: 100 + level * 50 (too linear)
+// New formula: 100 + (level^2 * 3) (creates "Wall" effect)
 export function calculateXPForLevel(level: number): number {
-  // Progressive XP curve: Base 100 + (level * 50)
-  return 100 + level * 50
+  // Level 1 needs: 103 XP (Easy - 1 hour focus)
+  // Level 10 needs: 400 XP (Medium - 1 day focus)
+  // Level 50 needs: 7,600 XP (Hard - 2 weeks of focus)
+  // Level 99 needs: 29,500 XP (Insane - 2 months of focus)
+
+  return Math.floor(100 + Math.pow(level, 2) * 3)
 }
 
 export function getLevelFromXP(totalXP: number): number {
   let level = 1
-  let cumulativeXP = 0
+  let xpNeededForNext = calculateXPForLevel(level)
 
-  while (level < 100) {
-    const xpNeeded = calculateXPForLevel(level)
-    cumulativeXP += xpNeeded
-    if (cumulativeXP > totalXP) break
+  // Loop until we don't have enough XP to pass the next level
+  while (totalXP >= xpNeededForNext && level < 100) {
+    totalXP -= xpNeededForNext // Subtract the XP used to pass this level
     level++
+    xpNeededForNext = calculateXPForLevel(level)
   }
 
   return level
+}
+
+export function getLevelProgress(totalXP: number): {
+  currentLevelXP: number
+  xpForNextLevel: number
+  percentage: number
+} {
+  let level = 1
+  let xpCounter = totalXP
+  let xpNeeded = calculateXPForLevel(level)
+
+  while (xpCounter >= xpNeeded && level < 100) {
+    xpCounter -= xpNeeded
+    level++
+    xpNeeded = calculateXPForLevel(level)
+  }
+
+  // If level 100, they are maxed out
+  if (level >= 100) {
+    return {
+      currentLevelXP: xpNeeded,
+      xpForNextLevel: xpNeeded,
+      percentage: 100,
+    }
+  }
+
+  // xpCounter is the "leftover" XP into the current level
+  const percentage = Math.min(100, Math.max(0, (xpCounter / xpNeeded) * 100))
+
+  return {
+    currentLevelXP: Math.floor(xpCounter),
+    xpForNextLevel: xpNeeded,
+    percentage: Math.floor(percentage),
+  }
 }

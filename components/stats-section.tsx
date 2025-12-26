@@ -31,6 +31,7 @@ export function StatsSection() {
       return
     }
 
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const today = new Date().toISOString().split("T")[0]
 
     const [completedRes, goalsRes, dailyXpRes, zenSessionsRes, userStatsRes] = await Promise.all([
@@ -48,19 +49,21 @@ export function StatsSection() {
         .gte("created_at", `${today}T00:00:00`)
         .lte("created_at", `${today}T23:59:59`),
       supabase
-        .from("zen_sessions")
-        .select("duration_minutes")
+        .from("activity_log")
+        .select("metadata")
         .eq("user_id", user.id)
-        .eq("completed", true)
-        .gte("started_at", `${today}T00:00:00`)
-        .lte("started_at", `${today}T23:59:59`),
+        .eq("activity_type", "zen_session")
+        .gte("created_at", twentyFourHoursAgo),
       supabase.from("user_stats").select("total_xp, user_id").order("total_xp", { ascending: false }),
     ])
 
     const dailyXp = dailyXpRes.data?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
 
     const totalFocusMinutes =
-      zenSessionsRes.data?.reduce((sum, session) => sum + (session.duration_minutes || 0), 0) || 0
+      zenSessionsRes.data?.reduce((sum, log) => {
+        const minutes = log.metadata?.minutes || 0
+        return sum + Number(minutes)
+      }, 0) || 0
 
     let userRank = null
     if (userStatsRes.data) {

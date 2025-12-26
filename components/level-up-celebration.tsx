@@ -1,6 +1,6 @@
 "use client"
 
-import { Sparkles, Zap, Trophy, Star } from "lucide-react"
+import { Sparkles, Zap, Trophy, Star, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { getLevelInfo } from "@/lib/leveling-system"
 import Confetti from "react-confetti"
@@ -20,13 +20,6 @@ export function LevelUpCelebration({ newLevel, onClose }: LevelUpCelebrationProp
       width: window.innerWidth,
       height: window.innerHeight,
     })
-
-    const timer = setTimeout(() => {
-      setIsVisible(false)
-      setTimeout(onClose, 500)
-    }, 5000)
-
-    return () => clearTimeout(timer)
   }, [onClose])
 
   if (!isVisible) return null
@@ -48,6 +41,17 @@ export function LevelUpCelebration({ newLevel, onClose }: LevelUpCelebrationProp
 
           {/* Main card */}
           <div className="relative bg-gradient-to-b from-background to-background/95 border-2 border-primary rounded-2xl p-8 text-center">
+            <button
+              onClick={() => {
+                setIsVisible(false)
+                setTimeout(onClose, 500)
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted/50 transition-colors group"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
+            </button>
+
             {/* Animated icons */}
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-4">
               <Star className="w-8 h-8 text-yellow-400 animate-bounce" style={{ animationDelay: "0ms" }} />
