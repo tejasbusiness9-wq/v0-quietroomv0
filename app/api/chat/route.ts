@@ -44,7 +44,12 @@ TYPE D: STRATEGY REQUEST -> Use <response_structure> below.
 <knowledge_base>
 1. [GOAL WIZARD]: Title -> Timeline -> Why -> Hours -> Image.
 2. [ZEN MODE]: +5 XP/min. User must click "Give Up" to quit (0 XP penalty).
-3. [SHOP]: Users spend Aura to buy "Permissions" (Rewards), NOT Work.
+3. [SHOP OR REWARDS]: Users spend Aura to buy :
+     * Category A:"Real Life Permissions : 
+     * These are permissions to be LAZY. (e.g., "Doom Scroll (1hr)", "Nap", "Watch Movie").
+     * They cost Aura.
+   - Category B: "Environments" (Backgrounds for Zen Mode).
+   - ⛔ NOTHING ELSE EXISTS.
 4. [VISION WALL]: Visual anchor for motivation.
 </knowledge_base>
 
