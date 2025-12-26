@@ -789,7 +789,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-8">{renderContent()}</div>
         </main>
-        {showXPToast && <XpToast xp={xpToastData.xp} message={xpToastData.message} />}
+        {showXPToast && <XpToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
         {showLevelUp && <LevelUpCelebration level={newLevel} />}
       </div>
       {selectedTask && (

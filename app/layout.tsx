@@ -1,9 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
-import { DataRefreshProvider } from "@/contexts/data-refresh-context"
+import ClientLayout from "./client-layout"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -36,12 +35,5 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
-        <DataRefreshProvider>{children}</DataRefreshProvider>
-        <Analytics />
-      </body>
-    </html>
-  )
+  return <ClientLayout>{children}</ClientLayout>
 }

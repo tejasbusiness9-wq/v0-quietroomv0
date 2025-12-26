@@ -168,15 +168,55 @@ export default function LeaderboardPage() {
     )
   }
 
+  const currentUserEntry = leaderboard.find((entry) => entry.user_id === currentUserId)
+  const timeUntilClaim = currentUserEntry ? getTimeUntilNextClaim(currentUserEntry.last_aura_claim_at) : null
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Trophy className="w-10 h-10 text-violet-400" />
-          <h2 className="text-4xl font-bold text-primary">Leaderboard</h2>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Trophy className="w-10 h-10 text-violet-400" />
+              <h2 className="text-4xl font-bold text-primary">Leaderboard</h2>
+            </div>
+            <p className="text-muted-foreground">Top players ranked by total XP earned</p>
+          </div>
+
+          {currentUserEntry && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-primary/10 border-2 border-primary/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">{getRankBadge(currentUserEntry.rank)}</div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Your Rank</p>
+                  <p className="text-lg font-bold text-foreground">#{currentUserEntry.rank}</p>
+                </div>
+              </div>
+
+              {currentUserEntry.claimable_aura > 0 && (
+                <div className="flex-shrink-0">
+                  {currentUserEntry.can_claim_aura ? (
+                    <button
+                      onClick={() => handleClaimAura(currentUserEntry)}
+                      disabled={claiming}
+                      className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      <img src="/images/aura.png" alt="Aura" className="w-4 h-4" />
+                      <span>Claim {currentUserEntry.claimable_aura}</span>
+                    </button>
+                  ) : (
+                    <div className="px-4 py-2 bg-muted border border-border rounded-lg whitespace-nowrap">
+                      <p className="text-xs text-muted-foreground">Next claim in</p>
+                      <p className="text-sm font-semibold text-foreground">{timeUntilClaim}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <p className="text-muted-foreground">Top players ranked by total XP earned</p>
-        <div className="mt-4 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+
+        <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
           <p className="text-sm text-primary font-semibold mb-1">Daily Aura Rewards</p>
           <p className="text-xs text-muted-foreground">
             Rank 1-10: 100 Aura • Rank 11-50: 50 Aura • Rank 51-100: 20 Aura
@@ -197,7 +237,6 @@ export default function LeaderboardPage() {
         <div className="space-y-3">
           {leaderboard.map((entry) => {
             const isCurrentUser = entry.user_id === currentUserId
-            const timeUntilClaim = getTimeUntilNextClaim(entry.last_aura_claim_at)
 
             return (
               <div
@@ -218,21 +257,21 @@ export default function LeaderboardPage() {
                   <div className="flex-shrink-0">{getRankBadge(entry.rank)}</div>
 
                   <div className="flex-shrink-0">
-                    <div
-                      className={`w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-2xl font-bold ${
-                        entry.rank === 1 ? "ring-4 ring-primary/50" : ""
-                      }`}
-                    >
-                      {entry.avatar_url ? (
-                        <img
-                          src={entry.avatar_url || "/placeholder.svg"}
-                          alt={entry.display_name}
-                          className="w-full h-full rounded-full"
-                        />
-                      ) : (
+                    {entry.avatar_url ? (
+                      <img
+                        src={entry.avatar_url || "/placeholder.svg"}
+                        alt={entry.display_name}
+                        className="w-14 h-14 rounded-full"
+                      />
+                    ) : (
+                      <div
+                        className={`w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-2xl font-bold ${
+                          entry.rank === 1 ? "ring-4 ring-primary/50" : ""
+                        }`}
+                      >
                         <span>{entry.display_name?.charAt(0) || "?"}</span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -270,26 +309,6 @@ export default function LeaderboardPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">Level</p>
                     </div>
-
-                    {isCurrentUser && entry.claimable_aura > 0 && (
-                      <div className="text-right">
-                        {entry.can_claim_aura ? (
-                          <button
-                            onClick={() => handleClaimAura(entry)}
-                            disabled={claiming}
-                            className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <img src="/images/aura.png" alt="Aura" className="w-4 h-4" />
-                            <span>Claim {entry.claimable_aura}</span>
-                          </button>
-                        ) : (
-                          <div className="px-4 py-2 bg-muted border border-border rounded-lg">
-                            <p className="text-xs text-muted-foreground">Next claim in</p>
-                            <p className="text-sm font-semibold text-foreground">{timeUntilClaim}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
