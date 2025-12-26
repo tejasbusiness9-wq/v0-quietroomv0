@@ -264,14 +264,12 @@ export default function RewardsPage() {
             {/* Aura Balance */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 blur-xl opacity-50 animate-pulse"></div>
-              <div className="relative bg-black/80 backdrop-blur-sm border border-cyan-500/50 rounded-2xl px-4 md:px-8 py-3 md:py-4">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <img src="/images/aura.png" alt="Aura" className="w-8 h-8 md:w-10 md:h-10" />
-                  <div>
-                    <p className="text-[10px] md:text-xs text-gray-400 font-mono uppercase tracking-wider">
-                      Your Balance
-                    </p>
-                    <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-mono">
+              <div className="relative bg-black/80 backdrop-blur-sm border border-cyan-500/50 rounded-2xl px-4 md:px-8 py-4 md:py-4">
+                <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
+                  <img src="/images/aura.png" alt="Aura" className="w-10 h-10 md:w-10 md:h-10" />
+                  <div className="text-center md:text-left">
+                    <p className="text-xs md:text-xs text-gray-400 font-mono uppercase tracking-wider">Your Balance</p>
+                    <p className="text-3xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-mono">
                       {auraBalance.toLocaleString()}
                     </p>
                   </div>
