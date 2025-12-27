@@ -200,6 +200,8 @@ export default function RewardsPage() {
   }
 
   const handleWildcardPurchase = async () => {
+    console.log("[v0] Wildcard purchase started, custom text:", customRewardText)
+
     if (!customRewardText.trim()) {
       toast({
         title: "Input Required",
@@ -213,9 +215,14 @@ export default function RewardsPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      console.log("[v0] User:", user?.id)
+
       if (!user) return
 
       const wildcardPrice = 100
+
+      console.log("[v0] Current aura balance:", auraBalance)
 
       if (auraBalance < wildcardPrice) {
         toast({
@@ -232,6 +239,8 @@ export default function RewardsPage() {
         .update({ aura: auraBalance - wildcardPrice })
         .eq("user_id", user.id)
 
+      console.log("[v0] Aura deduction result:", updateError ? "error" : "success")
+
       if (updateError) throw updateError
 
       // Add to inventory with custom text
@@ -242,6 +251,8 @@ export default function RewardsPage() {
         is_used: false,
         custom_reward_text: customRewardText.trim(),
       })
+
+      console.log("[v0] Inventory insertion result:", inventoryError ? "error" : "success")
 
       if (inventoryError) throw inventoryError
 
@@ -254,7 +265,7 @@ export default function RewardsPage() {
       setCustomRewardText("")
       fetchData()
     } catch (error) {
-      console.error("Wildcard purchase error:", error)
+      console.error("[v0] Wildcard purchase error:", error)
       toast({
         title: "Purchase Failed",
         description: "Something went wrong. Please try again.",
@@ -348,12 +359,12 @@ export default function RewardsPage() {
                 <textarea
                   value={customRewardText}
                   onChange={(e) => setCustomRewardText(e.target.value)}
-                  placeholder="e.g., Eat a whole pizza, Play 2 hours of GTA, Watch anime all day..."
+                  placeholder="e.g., Pizza night, 2h gaming..."
                   className="w-full h-32 bg-black/50 border border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 resize-none font-mono"
-                  maxLength={200}
+                  maxLength={20}
                 />
                 <p className="text-xs text-gray-500 mt-2 font-mono text-right">
-                  {customRewardText.length}/200 characters
+                  {customRewardText.length}/20 characters
                 </p>
               </div>
 
@@ -521,11 +532,6 @@ export default function RewardsPage() {
               {/* Wildcard Permission card */}
               <div className="group relative bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-md border-2 border-purple-500/50 rounded-xl overflow-hidden hover:border-purple-400/70 transition-all hover:scale-105 shadow-lg shadow-purple-500/20">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                {/* Premium Badge */}
-                <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-xs font-bold font-mono">
-                  PREMIUM
-                </div>
 
                 <div className="relative p-6">
                   <div className="flex items-center gap-3 mb-4">
