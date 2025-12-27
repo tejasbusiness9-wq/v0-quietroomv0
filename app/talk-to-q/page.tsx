@@ -2,13 +2,13 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, Loader2, Menu, X, Calendar, Mic, MicOff } from "lucide-react"
+import { Send, Loader2, Menu, X, Calendar, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import ReactMarkdown from "react-markdown"
 
 interface Message {
   id: string
@@ -203,6 +203,14 @@ export default function TalkToQPage() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
+    if (messages.length > 0) {
+      const timer = setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        }
+      }, 100)
+      return () => clearTimeout(timer)
+    }
   }, [messages, isLoading])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -375,20 +383,20 @@ export default function TalkToQPage() {
   return (
     <div className="flex h-full relative">
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-card border-r border-border transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="h-full flex flex-col">
           {/* Sidebar Header */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-primary">TACTICAL LOG</h2>
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-base font-bold text-primary">TACTICAL LOG</h2>
               <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsSidebarOpen(false)}>
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Last 7 days of strategies</p>
+            <p className="text-xs text-muted-foreground">Last 7 days</p>
           </div>
 
           {/* Sessions List */}
@@ -398,17 +406,17 @@ export default function TalkToQPage() {
                 <button
                   key={session.id}
                   onClick={() => handleSessionClick(session.id)}
-                  className={`w-full p-3 rounded-lg text-left transition-all ${
+                  className={`w-full p-2.5 rounded-lg text-left transition-all ${
                     session.id === activeSessionId
                       ? "bg-primary/10 border-2 border-primary shadow-[0_0_15px_rgba(168,85,247,0.4)]"
                       : "bg-muted/50 border-2 border-transparent hover:bg-muted hover:border-primary/30"
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    <Calendar className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                    <Calendar className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{session.title}</p>
-                      <p className="text-xs text-muted-foreground">{formatSessionDate(session.created_at)}</p>
+                      <p className="text-xs font-semibold text-foreground truncate">{session.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatSessionDate(session.created_at)}</p>
                     </div>
                   </div>
                 </button>
@@ -422,101 +430,82 @@ export default function TalkToQPage() {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full">
-        <div className="flex items-center gap-3 p-4 border-b border-border bg-background">
+        <div className="flex items-center gap-3 p-3 border-b border-border bg-background">
           <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-bold">Talk to Q</h1>
+          <h1 className="text-base font-bold">Talk to Q</h1>
         </div>
 
-        {/* Chat Messages */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
-            <div ref={scrollRef} className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6">
+            <div ref={scrollRef} className="max-w-4xl mx-auto px-4 md:px-8 py-4 space-y-4">
               {isLoadingSession ? (
                 <div className="text-center py-12">
                   <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-                  <p className="text-muted-foreground">Loading Strategy...</p>
+                  <p className="text-sm text-muted-foreground">Loading Strategy...</p>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-12 space-y-4">
-                  <div className="w-24 h-24 mx-auto">
-                    <img src="/images/qmascot.png" alt="Q Mascot" className="w-full h-full object-contain" />
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                    <img src="/images/qmascot.png" alt="Q" className="w-16 h-16" />
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Talk to Q</h2>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      Ask me anything about academics, productivity, business, or mindset. I'll give you real advice,
-                      not just motivation.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center pt-4">
-                    {[
-                      "How do I improve my CGPA?",
-                      "Help me start a business",
-                      "I'm procrastinating too much",
-                      "How to build discipline?",
-                    ].map((suggestion, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setInput(suggestion)}
-                        className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-sm transition-colors border border-border"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
+                  <h2 className="text-xl font-bold mb-2">Welcome back, Operator</h2>
+                  <p className="text-muted-foreground mb-6">Q is ready to help you strategize.</p>
                 </div>
               ) : (
-                messages.map((message) => (
+                messages.map((message, index) => (
                   <div
-                    key={message.id}
-                    className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    key={index}
+                    className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
-                      <Avatar className="w-10 h-10 border-2 border-primary/30 shrink-0">
-                        <AvatarImage src="/images/qmascot.png" alt="Q" />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
-                          Q
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <img src="/images/qmascot.png" alt="Q" className="w-6 h-6" />
+                      </div>
                     )}
                     <div
-                      className={`max-w-[70%] rounded-2xl px-5 py-3 ${
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground ml-auto"
-                          : "bg-card border border-border text-card-foreground"
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                        message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                       }`}
                     >
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                            ul: ({ children }) => <ul className="mb-2 last:mb-0 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="mb-2 last:mb-0 space-y-1">{children}</ol>,
+                            li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                            strong: ({ children }) => <strong className="font-bold text-primary">{children}</strong>,
+                            code: ({ children }) => (
+                              <code className="bg-background/50 px-1 py-0.5 rounded text-sm">{children}</code>
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                     {message.role === "user" && (
-                      <Avatar className="w-10 h-10 border-2 border-muted">
-                        {user?.user_metadata?.avatar_url ? (
-                          <AvatarImage src={user.user_metadata.avatar_url || "/placeholder.svg"} alt={userName} />
-                        ) : (
-                          <AvatarFallback className="bg-muted text-foreground font-semibold">
-                            {userName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                        <span className="text-primary-foreground text-xs font-bold">
+                          {user?.username?.[0].toUpperCase() || "U"}
+                        </span>
+                      </div>
                     )}
                   </div>
                 ))
               )}
 
               {isLoading && (
-                <div className="flex gap-4 justify-start">
-                  <Avatar className="w-10 h-10 border-2 border-primary/30 shrink-0">
-                    <AvatarImage src="/images/qmascot.png" alt="Q" />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
-                      Q
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="bg-card border border-border rounded-2xl px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                      <span className="text-sm text-muted-foreground animate-pulse">Q is thinking...</span>
+                <div className="flex gap-3 justify-start">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <img src="/images/qmascot.png" alt="Q" className="w-6 h-6" />
+                  </div>
+                  <div className="bg-muted rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Q is thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -525,46 +514,36 @@ export default function TalkToQPage() {
           </ScrollArea>
         </div>
 
-        {/* Input Area */}
-        <div className="border-t border-border bg-background">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-4">
-            <form onSubmit={handleSubmit} className="flex gap-3 items-end">
-              <div className="flex-1">
-                <Textarea
-                  value={input}
-                  onChange={handleInputChange}
-                  placeholder="Type your message here..."
-                  className="min-h-[60px] max-h-32 resize-none bg-muted text-foreground placeholder:text-muted-foreground border-border focus-visible:ring-primary"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSubmit(e as any)
-                    }
-                  }}
-                />
-              </div>
-              {recognition && (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant={isListening ? "default" : "outline"}
-                  onClick={toggleListening}
-                  className="h-[60px] w-[60px] rounded-xl shrink-0"
-                >
-                  {isListening ? <MicOff className="w-5 h-5 animate-pulse" /> : <Mic className="w-5 h-5" />}
-                </Button>
-              )}
-              <Button
-                type="submit"
-                size="icon"
-                disabled={!input.trim() || isLoading}
-                className="h-[60px] w-[60px] rounded-xl shrink-0"
-              >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </Button>
-            </form>
-            <p className="text-xs text-muted-foreground text-center mt-3">Q can make mistakes, so double-check it</p>
-          </div>
+        <div className="border-t border-border bg-background p-3">
+          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit(e)
+                }
+              }}
+              placeholder="Type your message here..."
+              className="min-h-[48px] max-h-[120px] resize-none"
+              disabled={isLoading}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={toggleListening}
+              className="shrink-0 h-12 w-12 bg-transparent"
+              disabled={isLoading}
+            >
+              <Mic className={`w-5 h-5 ${isListening ? "text-red-500 animate-pulse" : ""}`} />
+            </Button>
+            <Button type="submit" size="icon" className="shrink-0 h-12 w-12" disabled={isLoading || !input.trim()}>
+              <Send className="w-5 h-5" />
+            </Button>
+          </form>
+          <p className="text-xs text-muted-foreground text-center mt-2">Q can make mistakes, so double-check it</p>
         </div>
       </div>
     </div>
