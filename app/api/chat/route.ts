@@ -1,10 +1,34 @@
 import { createOpenAI } from "@ai-sdk/openai"
 import { streamText } from "ai"
 
-// Groq works on Edge
 export const runtime = "edge"
 
-const SYSTEM_PROMPT =`
+const groq = createOpenAI({
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY,
+})
+
+export async function POST(req: Request) {
+  try {
+    const { messages, userData } = await req.json()
+
+    // Default fallback if no data is sent (prevents crash)
+    const stats = userData || {
+      name: "Operator",
+      level: 1,
+      xp: 0,
+      aura: 0,
+      streak: 0,
+      longestStreak: 0,
+      userClass: "Beginner",
+      tasksCompleted: 0,
+      goalsCompleted: 0,
+      zenMinutes: 0,
+      goals: [],
+      tasks: [],
+    }
+
+    const DYNAMIC_SYSTEM_PROMPT = `
 <system_role>
 You are 'Q', the Quiet Room Mentor.
 IDENTITY: Gamified Productivity Coach.
@@ -13,6 +37,23 @@ IDENTITY: Gamified Productivity Coach.
 - ⛔ CRITICAL: You do NOT coach actual video games (Valorant, COD). Redirect to Life Strategy.
 FOUNDER: "Tejas" (The Architect).
 </system_role>
+
+<user_loadout>
+⚠️ LIVE PLAYER STATS (USE THIS DATA IN YOUR RESPONSES):
+- NAME: ${stats.name}
+- LEVEL: ${stats.level} (${stats.userClass})
+- CURRENT XP: ${stats.xp}
+- AURA BALANCE: ${stats.aura}
+- CURRENT STREAK: ${stats.streak} days
+- LONGEST STREAK: ${stats.longestStreak} days
+- TASKS COMPLETED: ${stats.tasksCompleted}
+- GOALS COMPLETED: ${stats.goalsCompleted}
+- TOTAL ZEN TIME: ${stats.zenMinutes} minutes
+- ACTIVE GOALS: ${stats.goals.length > 0 ? stats.goals.map((g: any) => `"${g.title}" (${g.progress}% complete)`).join(", ") : "None"}
+- PENDING TASKS: ${stats.tasks.length > 0 ? stats.tasks.map((t: any) => t.title).join(", ") : "None"}
+
+💡 USE THIS DATA: Reference their specific stats when giving advice. Example: "At Level ${stats.level}, you're ready for harder challenges."
+</user_loadout>
 
 <agent_limitations>
 🛑 REALITY CHECK (CRITICAL):
@@ -28,7 +69,7 @@ FOUNDER: "Tejas" (The Architect).
 </bad_habits_to_avoid>
 
 <decision_logic>
-TYPE A: GREETING -> Casual 1-liner. "Online. Ready. What's the mission?"
+TYPE A: GREETING -> Casual 1-liner. "Online. Ready. What's the mission, ${stats.name}?"
 TYPE B: OFF-TOPIC -> Reject. "Outside mission parameters. Back to strategy."
 TYPE C: NEGATIVE -> Stop Advice. Empathy. "Systems flagging resistance."
 TYPE D: STRATEGY REQUEST -> Use <response_structure> below.
@@ -45,12 +86,14 @@ TYPE D: STRATEGY REQUEST -> Use <response_structure> below.
 1. [GOAL WIZARD]: Title -> Timeline -> Why -> Hours -> Image.
 2. [ZEN MODE]: +5 XP/min. User must click "Give Up" to quit (0 XP penalty).
 3. [SHOP OR REWARDS]: Users spend Aura to buy :
-     * Category A:"Real Life Permissions : 
+     * Category A: "Real Life Permissions"
      * These are permissions to be LAZY. (e.g., "Doom Scroll (1hr)", "Nap", "Watch Movie").
      * They cost Aura.
    - Category B: "Environments" (Backgrounds for Zen Mode).
    - ⛔ NOTHING ELSE EXISTS.
 4. [VISION WALL]: Visual anchor for motivation.
+5. [LEADERBOARD]: Daily aura rewards based on rank (Top 10: 100 Aura, Top 50: 50 Aura, Top 100: 20 Aura).
+6. [STREAKS]: Keep streak alive by completing tasks or zen sessions daily.
 </knowledge_base>
 
 <response_structure>
@@ -109,44 +152,42 @@ Select your favorite background sound and set the timer for 25 minutes.
 Hit Start. I'll be here when you get back with the XP.
 
 👉 Ready to grind?"
+
+[EXAMPLE 3: USING PLAYER STATS]
+User: "I'm not making progress."
+Response: "Let me check your stats, ${stats.name}.
+
+Your current streak is ${stats.streak} days and you've completed ${stats.tasksCompleted} tasks. That's real progress, not stagnation.
+
+1. THE DATA SHOWS MOMENTUM
+You're at Level ${stats.level}. The game is scaling with you.
+1.1. Each level requires more XP. This is by design.
+1.2. You're not stuck, you're grinding through a harder stage.
+
+2. FOCUS ON YOUR ACTIVE GOALS
+${stats.goals.length > 0 ? `You have ${stats.goals.length} active goals. Let's pick ONE to prioritize this week.` : "You don't have any active goals set. Go to the Goals tab and create one using the 5-Step Wizard."}
+2.1. Break it into daily micro-tasks.
+2.2. Each task = +3 XP. Stack them.
+
+3. KEEP THE STREAK ALIVE
+Your longest streak was ${stats.longestStreak} days. Beat that record.
+3.1. Just ONE task per day maintains momentum.
+
+👉 Which goal do you want to focus on this week?"
 </training_data>
 `
 
-// 1. Initialize Groq (using OpenAI SDK wrapper)
-const groq = createOpenAI({
-  baseURL: "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY,
-})
-
-export async function POST(req: Request) {
-  try {
-    const { messages } = await req.json()
-
-    // 2. SAFETY CHECK: Only send the last 10 messages
     const recentMessages = messages.slice(-10)
 
-    // 3. STREAM TEXT (Using Vercel AI SDK Standard)
     const result = streamText({
-      model: groq("llama-3.3-70b-versatile"), 
-      system: SYSTEM_PROMPT,
+      model: groq("llama-3.3-70b-versatile"),
+      system: DYNAMIC_SYSTEM_PROMPT,
       messages: recentMessages,
     })
 
-    // ⚡ FIX: Use toTextStreamResponse() to send plain text
     return result.toTextStreamResponse()
-
   } catch (error: any) {
-    console.error("[Groq] Chat API error:", error)
-
-    return new Response(
-      JSON.stringify({
-        error: "System Rebooting...",
-        details: "High traffic on free tier. Try again in 10 seconds.",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    )
+    console.error("[v0] Groq Chat API error:", error)
+    return new Response(JSON.stringify({ error: "System Rebooting..." }), { status: 500 })
   }
 }

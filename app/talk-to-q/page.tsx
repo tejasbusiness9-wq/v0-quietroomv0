@@ -243,6 +243,40 @@ export default function TalkToQPage() {
     setMessages((prev) => [...prev, assistantMessage])
 
     try {
+      const [profileData, statsData, goalsData, tasksData, streakData] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+        supabase.from("user_stats").select("*").eq("user_id", user.id).single(),
+        supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "in_progress").limit(5),
+        supabase.from("tasks").select("*").eq("user_id", user.id).eq("completed", false).limit(5),
+        supabase.from("streaks").select("*").eq("user_id", user.id).single(),
+      ])
+
+      const profile = profileData.data
+      const stats = statsData.data
+      const goals = goalsData.data || []
+      const tasks = tasksData.data || []
+      const streak = streakData.data
+
+      const userData = {
+        name: profile?.display_name || profile?.username || user.email?.split("@")[0] || "Operator",
+        level: profile?.level || 1,
+        xp: profile?.current_xp || 0,
+        aura: profile?.aura || 0,
+        streak: streak?.current_streak || 0,
+        longestStreak: streak?.longest_streak || 0,
+        userClass: profile?.user_class || "Beginner",
+        tasksCompleted: stats?.tasks_completed || 0,
+        goalsCompleted: stats?.goals_completed || 0,
+        zenMinutes: stats?.total_zen_minutes || 0,
+        goals: goals.map((g) => ({
+          title: g.title,
+          progress: g.progress || 0,
+        })),
+        tasks: tasks.map((t) => ({
+          title: t.title,
+        })),
+      }
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -253,6 +287,7 @@ export default function TalkToQPage() {
             role: m.role,
             content: m.content,
           })),
+          userData, // Send comprehensive user stats
         }),
       })
 
