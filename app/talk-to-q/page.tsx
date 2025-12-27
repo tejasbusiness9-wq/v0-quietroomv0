@@ -148,7 +148,7 @@ export default function TalkToQPage() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, username")
+        .select("display_name, username, avatar_url")
         .eq("user_id", userId)
         .single()
 
@@ -515,8 +515,21 @@ export default function TalkToQPage() {
                       </div>
                     </div>
                     {message.role === "user" && (
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <span className="text-primary-foreground text-xs font-bold">{userInitial}</span>
+                      <div className="flex items-start justify-end gap-3 group">
+                        <div className="bg-purple-600 text-white rounded-2xl px-6 py-3 max-w-[70%] shadow-lg">
+                          {message.content}
+                        </div>
+                        {userProfile?.avatar_url ? (
+                          <img
+                            src={userProfile.avatar_url || "/placeholder.svg"}
+                            alt={userDisplayName}
+                            className="w-10 h-10 rounded-full border-2 border-purple-500 object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold border-2 border-purple-500">
+                            {userInitial}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
