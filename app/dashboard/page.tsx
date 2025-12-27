@@ -39,8 +39,6 @@ import {
 import { StreakCounter } from "@/components/streak-counter"
 import { WeeklyXPChart } from "@/components/weekly-xp-chart"
 import { useDataRefresh } from "@/contexts/data-refresh-context" // Import data refresh context
-import { dataCache } from "@/lib/data-cache"
-import { prefetchLeaderboardData, prefetchGoalsData } from "@/lib/data-prefetch"
 
 type PageType =
   | "dashboard"
@@ -129,39 +127,32 @@ export default function DashboardPage() {
 
     if (!user) return
 
-    // Check cache first
-    const cachedProfile = dataCache.get(`profile:${user.id}`)
-    const cachedStats = dataCache.get(`stats:${user.id}`)
+    const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
 
-    if (cachedProfile && cachedStats) {
-      console.log("[v0] Using cached profile data")
-      setProfileData(cachedProfile)
-      setProfileStats(cachedStats)
-      return
+    if (profileData) {
+      setProfileData(profileData)
     }
 
-    // Fetch if not cached
-    const [profileResult, goalsResult, tasksResult, streakResult] = await Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase.from("goals").select("id").eq("user_id", user.id).eq("status", "completed"),
-      supabase.from("tasks").select("id").eq("user_id", user.id).eq("completed", true),
-      supabase.from("streaks").select("current_streak").eq("user_id", user.id).maybeSingle(),
-    ])
+    const { data: goalsData } = await supabase
+      .from("goals")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
 
-    if (profileResult.data) {
-      setProfileData(profileResult.data)
-      dataCache.set(`profile:${user.id}`, profileResult.data)
-    }
+    const { data: tasksData } = await supabase.from("tasks").select("id").eq("user_id", user.id).eq("completed", true)
 
-    const stats = {
-      goalsCompleted: goalsResult.data?.length || 0,
-      tasksFinished: tasksResult.data?.length || 0,
-      currentStreak: streakResult.data?.current_streak || 0,
-      totalXP: profileResult.data?.total_xp || 0,
-    }
+    const { data: streakData } = await supabase
+      .from("streaks")
+      .select("current_streak")
+      .eq("user_id", user.id)
+      .maybeSingle()
 
-    setProfileStats(stats)
-    dataCache.set(`stats:${user.id}`, stats)
+    setProfileStats({
+      goalsCompleted: goalsData?.length || 0,
+      tasksFinished: tasksData?.length || 0,
+      currentStreak: streakData?.current_streak || 0,
+      totalXP: profileData?.total_xp || 0,
+    })
   }
 
   useEffect(() => {
@@ -231,16 +222,6 @@ export default function DashboardPage() {
 
   const fetchTodaysTasks = async (userId: string) => {
     setLoadingTasks(true)
-
-    // Check cache first
-    const cachedTasks = dataCache.get(`tasks:today:${userId}`)
-    if (cachedTasks) {
-      console.log("[v0] Using cached tasks data")
-      setTasks(cachedTasks)
-      setLoadingTasks(false)
-      return
-    }
-
     const today = new Date().toISOString().split("T")[0]
 
     const { data, error } = await supabase
@@ -254,7 +235,6 @@ export default function DashboardPage() {
 
     if (!error && data) {
       setTasks(data)
-      dataCache.set(`tasks:today:${userId}`, data)
     }
     setLoadingTasks(false)
   }
@@ -289,28 +269,41 @@ export default function DashboardPage() {
     }
   }
 
-  const toggleComplete = async (taskId: string) => {
+  const toggleComplete = async (id: string, currentState: boolean) => {
     if (!user) return
+
+    const newState = !currentState
 
     const { error } = await supabase
       .from("tasks")
       .update({
-        completed: true,
-        completed_at: new Date().toISOString(),
-        status: "completed",
+        completed: newState,
+        completed_at: newState ? new Date().toISOString() : null,
+        status: newState ? "completed" : "active",
       })
-      .eq("id", taskId)
+      .eq("id", id)
 
-    if (error) {
-      console.error("Error toggling task:", error)
-      return
+    if (!error && newState) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("total_xp, current_xp, level, xp_to_next_level")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (profile) {
+        setXpToastData({
+          xp: 3,
+          message: "Task completed!",
+        })
+        setShowXPToast(true)
+        setTimeout(() => setShowXPToast(false), 3000)
+
+        console.log("[v0] Task completed - Profile XP:", profile.current_xp, "/", profile.xp_to_next_level)
+      }
+
+      fetchTodaysTasks(user.id)
     }
 
-    // Invalidate cache
-    dataCache.invalidate(`tasks:today:${user.id}`)
-    dataCache.invalidate(`stats:${user.id}`)
-
-    fetchTodaysTasks(user.id)
     await fetchProfileData()
     triggerRefresh() // Trigger global refresh after task completion
   }
@@ -394,7 +387,7 @@ export default function DashboardPage() {
                             checked={task.completed}
                             onChange={(e) => {
                               e.stopPropagation()
-                              toggleComplete(task.id)
+                              toggleComplete(task.id, task.completed)
                             }}
                             className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
                           />
@@ -568,22 +561,6 @@ export default function DashboardPage() {
       fetchTodaysTasks(user.id)
     }
   }, [user, currentPage])
-
-  useEffect(() => {
-    const prefetchOtherPages = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        // Prefetch leaderboard and goals in background
-        setTimeout(() => {
-          prefetchLeaderboardData()
-          prefetchGoalsData(user.id)
-        }, 1000) // Delay to not interfere with current page loading
-      }
-    }
-    prefetchOtherPages()
-  }, [])
 
   if (isLoadingUser) {
     return (
@@ -830,7 +807,7 @@ export default function DashboardPage() {
                   type="checkbox"
                   checked={selectedTask.completed}
                   onChange={() => {
-                    toggleComplete(selectedTask.id)
+                    toggleComplete(selectedTask.id, selectedTask.completed)
                     setSelectedTask(null)
                   }}
                   className="w-6 h-6 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"

@@ -1,6 +1,6 @@
 "use client"
 
-import { Star, Zap, TrendingUp, Timer, Trophy } from "lucide-react"
+import { Star, Zap, Timer, Trophy } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useDataRefresh } from "@/contexts/data-refresh-context"
@@ -101,23 +101,6 @@ export function StatsSection() {
     return (
       <div className="mb-8 flex items-center justify-center py-12">
         <Zap className="w-8 h-8 text-primary animate-pulse" />
-      </div>
-    )
-  }
-
-  const hasData = stats.focusTimeToday > 0 || stats.completedToday > 0 || stats.xpEarnedToday > 0
-
-  if (!hasData) {
-    return (
-      <div className="mb-8">
-        <div className="rune-card p-8 text-center">
-          <div className="relative inline-block mb-4">
-            <TrendingUp className="w-16 h-16 text-muted-foreground/30 animate-bounce" />
-            <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full animate-pulse" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">No Stats Yet</h3>
-          <p className="text-muted-foreground">Create tasks and goals to start tracking your progress!</p>
-        </div>
       </div>
     )
   }
