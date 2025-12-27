@@ -183,8 +183,7 @@ export default function TalkToQPage() {
 
     if (error) throw error
 
-    // Reload sessions to include the new one
-    await loadSessions(userId)
+    setSessions((prev) => [data, ...prev])
 
     return data.id
   }
