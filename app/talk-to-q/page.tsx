@@ -198,6 +198,15 @@ export default function TalkToQPage() {
     setIsSidebarOpen(false) // Close sidebar on mobile after selection
   }
 
+  const handleStarterQuestion = (question: string) => {
+    setInput(question)
+    // Auto-submit after a short delay to show the input
+    setTimeout(() => {
+      const submitEvent = new Event("submit", { bubbles: true, cancelable: true }) as any
+      handleSubmit(submitEvent)
+    }, 300)
+  }
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const prefilledQuery = localStorage.getItem("q_prefilled_query")
@@ -474,12 +483,50 @@ export default function TalkToQPage() {
                   <p className="text-sm text-muted-foreground">Loading Strategy...</p>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6 animate-in fade-in duration-500">
                     <img src="/images/qmascot.png" alt="Q" className="w-16 h-16" />
                   </div>
-                  <h2 className="text-xl font-bold mb-2">Welcome back, Operator</h2>
-                  <p className="text-muted-foreground mb-6">Q is ready to help you strategize.</p>
+                  <h2 className="text-xl font-bold mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
+                    Welcome back, Operator
+                  </h2>
+                  <p className="text-muted-foreground mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
+                    Q is ready to help you strategize. Try asking:
+                  </p>
+
+                  <div className="max-w-xl mx-auto space-y-3 px-4">
+                    {[
+                      { text: "How to use Zen Mode", delay: 300, icon: "🧘" },
+                      { text: "I am procrastinating a lot", delay: 400, icon: "⏰" },
+                      { text: "How do I achieve my goals", delay: 500, icon: "🎯" },
+                    ].map((q, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleStarterQuestion(q.text)}
+                        className="w-full group relative overflow-hidden rounded-xl border-2 border-border bg-card/50 backdrop-blur-sm p-4 text-left transition-all duration-300 hover:border-primary hover:bg-card hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20 animate-in fade-in slide-in-from-bottom-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ animationDelay: `${q.delay}ms` }}
+                        disabled={isLoading}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl transition-transform duration-300 group-hover:scale-110">
+                            {q.icon}
+                          </div>
+                          <span className="flex-1 font-medium text-foreground/90 group-hover:text-foreground transition-colors">
+                            {q.text}
+                          </span>
+                          <svg
+                            className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-0 group-hover:translate-x-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 messages.map((message) => (
