@@ -456,7 +456,7 @@ export default function TalkToQPage() {
               ) : (
                 messages.map((message, index) => (
                   <div
-                    key={index}
+                    key={`${index}-${message.content.slice(0, 20)}`}
                     className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
