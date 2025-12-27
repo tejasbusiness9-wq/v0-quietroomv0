@@ -1,12 +1,13 @@
 "use client"
 
-import { Plus, Calendar, Target, Zap, X, MoreVertical, Edit2, Trash2 } from "lucide-react"
+import { Plus, Calendar, Target, Zap, X, MoreVertical, Edit2, Trash2, AlertTriangle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { XPToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { useDataRefresh } from "@/contexts/data-refresh-context"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Task {
   id: string
@@ -34,9 +35,11 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   const [newLevel, setNewLevel] = useState(0)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const { refreshTrigger, triggerRefresh } = useDataRefresh()
+  const [activeTab, setActiveTab] = useState<"active" | "overdue">("active")
 
   useEffect(() => {
     fetchTasks()
+    checkAndResetStreakForOverdueTasks()
   }, [refreshTrigger])
 
   const fetchTasks = async () => {
@@ -252,24 +255,72 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     return due > today && due <= weekFromNow
   }
 
-  const tasksByWhen = {
-    today: tasks.filter((t) => isToday(t.due_date)),
-    "this-week": tasks.filter((t) => isThisWeek(t.due_date)),
-    someday: tasks.filter((t) => !t.due_date && !t.completed),
+  const checkAndResetStreakForOverdueTasks = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const now = new Date()
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+    const timeSinceMidnight = now.getTime() - midnight.getTime()
+
+    // Only check if we're within 5 minutes of midnight (to avoid multiple resets)
+    if (timeSinceMidnight < 5 * 60 * 1000) {
+      const { data: overdueTasks } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("completed", false)
+        .lt("due_date", midnight.toISOString())
+
+      if (overdueTasks && overdueTasks.length > 0) {
+        // Reset streak to 0
+        await supabase
+          .from("streaks")
+          .update({
+            current_streak: 0,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id)
+
+        console.log("[v0] Streak reset due to overdue tasks at midnight")
+      }
+    }
   }
 
-  const truncateText = (text: string, limit = 30) => {
-    if (text.length <= limit) return text
-    return text.substring(0, limit) + "..."
+  const isOverdue = (dueDate?: string, completed?: boolean) => {
+    if (!dueDate || completed) return false
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+    return new Date(dueDate) < today
   }
 
-  const TaskCard = ({ task }: { task: Task }) => (
+  const tasksByCategory = {
+    overdue: tasks.filter((t) => isOverdue(t.due_date, t.completed)),
+    today: tasks.filter((t) => !isOverdue(t.due_date, t.completed) && isToday(t.due_date)),
+    "this-week": tasks.filter((t) => !isOverdue(t.due_date, t.completed) && isThisWeek(t.due_date)),
+    someday: tasks.filter((t) => !isOverdue(t.due_date, t.completed) && !t.due_date && !t.completed),
+  }
+
+  const activeTasks = [...tasksByCategory.today, ...tasksByCategory["this-week"], ...tasksByCategory.someday]
+  const overdueTasks = tasksByCategory.overdue
+
+  const TaskCard = ({ task, showOverdueWarning }: { task: Task; showOverdueWarning?: boolean }) => (
     <div
-      className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 cursor-pointer ${
+      className={`bg-card border ${showOverdueWarning ? "border-red-500/50" : "border-border"} rounded-xl p-4 transition-all hover:border-primary/50 cursor-pointer ${
         task.completed ? "opacity-50" : ""
       } relative`}
       onClick={() => setSelectedTask(task)}
     >
+      {showOverdueWarning && (
+        <div className="absolute top-2 right-2 bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 border border-red-500/30">
+          <AlertTriangle className="w-3 h-3" />
+          OVERDUE
+        </div>
+      )}
       <div className="flex items-start gap-4">
         <input
           type="checkbox"
@@ -373,6 +424,11 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     </div>
   )
 
+  const truncateText = (text: string, limit = 30) => {
+    if (text.length <= limit) return text
+    return text.substring(0, limit) + "..."
+  }
+
   return (
     <div className="space-y-6 md:space-y-8">
       {showXPToast && <XPToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
@@ -394,80 +450,129 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="bg-card border border-border rounded-xl p-3 md:p-4">
-          <p className="text-xs md:text-sm text-muted-foreground mb-1">Total Tasks</p>
-          <p className="text-2xl md:text-3xl font-bold text-foreground">{tasks.length}</p>
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Active Tasks</p>
+          <p className="text-2xl md:text-3xl font-bold text-foreground">{activeTasks.length}</p>
+        </div>
+        <div className="bg-card border border-red-500/30 rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Overdue</p>
+          <p className="text-2xl md:text-3xl font-bold text-red-400">{overdueTasks.length}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-3 md:p-4">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Today</p>
-          <p className="text-2xl md:text-3xl font-bold text-primary">{tasksByWhen.today.length}</p>
+          <p className="text-2xl md:text-3xl font-bold text-primary">{tasksByCategory.today.length}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-3 md:p-4">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">This Week</p>
-          <p className="text-2xl md:text-3xl font-bold text-accent">{tasksByWhen["this-week"].length}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3 md:p-4">
-          <p className="text-xs md:text-sm text-muted-foreground mb-1">Someday</p>
-          <p className="text-2xl md:text-3xl font-bold text-purple-400">{tasksByWhen.someday.length}</p>
+          <p className="text-2xl md:text-3xl font-bold text-accent">{tasksByCategory["this-week"].length}</p>
         </div>
       </div>
 
-      {/* Tasks Lists */}
-      {loading ? (
-        <div className="text-center py-12 text-muted-foreground text-sm md:text-base">Loading tasks...</div>
-      ) : (
-        <div className="space-y-6">
-          {/* Today */}
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-              Today
-            </h2>
-            <div className="space-y-3">
-              {tasksByWhen.today.length === 0 ? (
-                <div className="text-center py-12 space-y-4">
-                  <div className="relative inline-block">
-                    <Calendar className="w-16 h-16 text-muted-foreground/30 animate-bounce" />
-                    <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full animate-pulse" />
-                  </div>
-                  <p className="text-muted-foreground">No tasks for today. Create one to get started!</p>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "active" | "overdue")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="active" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Active ({activeTasks.length})
+          </TabsTrigger>
+          <TabsTrigger value="overdue" className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Overdue ({overdueTasks.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-6">
+          {loading ? (
+            <div className="text-center py-12 text-muted-foreground text-sm md:text-base">Loading tasks...</div>
+          ) : (
+            <div className="space-y-6">
+              {/* Today */}
+              <div>
+                <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  Today
+                </h2>
+                <div className="space-y-3">
+                  {tasksByCategory.today.length === 0 ? (
+                    <div className="text-center py-12 space-y-4">
+                      <div className="relative inline-block">
+                        <Calendar className="w-16 h-16 text-muted-foreground/30 animate-bounce" />
+                        <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full animate-pulse" />
+                      </div>
+                      <p className="text-muted-foreground">No tasks for today. Create one to get started!</p>
+                    </div>
+                  ) : (
+                    tasksByCategory.today.map((task) => <TaskCard key={task.id} task={task} />)
+                  )}
                 </div>
-              ) : (
-                tasksByWhen.today.map((task) => <TaskCard key={task.id} task={task} />)
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* This Week */}
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-              This Week
-            </h2>
-            <div className="space-y-3">
-              {tasksByWhen["this-week"].length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No tasks for this week</p>
-              ) : (
-                tasksByWhen["this-week"].map((task) => <TaskCard key={task.id} task={task} />)
-              )}
-            </div>
-          </div>
+              {/* This Week */}
+              <div>
+                <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-accent" />
+                  This Week
+                </h2>
+                <div className="space-y-3">
+                  {tasksByCategory["this-week"].length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No tasks for this week</p>
+                  ) : (
+                    tasksByCategory["this-week"].map((task) => <TaskCard key={task.id} task={task} />)
+                  )}
+                </div>
+              </div>
 
-          {/* Someday */}
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-              Someday
-            </h2>
-            <div className="space-y-3">
-              {tasksByWhen.someday.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No tasks for someday</p>
-              ) : (
-                tasksByWhen.someday.map((task) => <TaskCard key={task.id} task={task} />)
-              )}
+              {/* Someday */}
+              <div>
+                <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                  Someday
+                </h2>
+                <div className="space-y-3">
+                  {tasksByCategory.someday.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No tasks for someday</p>
+                  ) : (
+                    tasksByCategory.someday.map((task) => <TaskCard key={task.id} task={task} />)
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </TabsContent>
+
+        <TabsContent value="overdue" className="space-y-6">
+          {loading ? (
+            <div className="text-center py-12 text-muted-foreground text-sm md:text-base">Loading tasks...</div>
+          ) : overdueTasks.length === 0 ? (
+            <div className="text-center py-12 space-y-4">
+              <div className="relative inline-block">
+                <Calendar className="w-16 h-16 text-green-500/30" />
+                <div className="absolute inset-0 bg-green-500/10 blur-xl rounded-full animate-pulse" />
+              </div>
+              <p className="text-muted-foreground text-lg font-semibold">All caught up!</p>
+              <p className="text-sm text-muted-foreground">No overdue tasks. Keep up the great work!</p>
+            </div>
+          ) : (
+            <div>
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-red-400 mb-1">Streak Warning!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      You have {overdueTasks.length} overdue task{overdueTasks.length > 1 ? "s" : ""}. Complete them to
+                      maintain your streak. At midnight, overdue tasks will reset your streak to 0.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {overdueTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} showOverdueWarning />
+                ))}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Task Detail Modal */}
       {selectedTask && (

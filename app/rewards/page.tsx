@@ -49,6 +49,8 @@ export default function RewardsPage() {
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null)
   const [showWildcardModal, setShowWildcardModal] = useState(false)
   const [customRewardText, setCustomRewardText] = useState("")
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [purchasedItemName, setPurchasedItemName] = useState("")
 
   const supabase = createBrowserClient()
 
@@ -256,12 +258,9 @@ export default function RewardsPage() {
 
       if (inventoryError) throw inventoryError
 
-      toast({
-        title: "Wildcard Created!",
-        description: `Your custom reward "${customRewardText}" has been added to inventory.`,
-      })
-
+      setPurchasedItemName(customRewardText.trim())
       setShowWildcardModal(false)
+      setShowSuccessModal(true)
       setCustomRewardText("")
       fetchData()
     } catch (error) {
@@ -359,12 +358,12 @@ export default function RewardsPage() {
                 <textarea
                   value={customRewardText}
                   onChange={(e) => setCustomRewardText(e.target.value)}
-                  placeholder="e.g., Pizza night, 2h gaming..."
+                  placeholder="e.g., Pizza night, 2h gaming session, movie marathon..."
                   className="w-full h-32 bg-black/50 border border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 resize-none font-mono"
-                  maxLength={20}
+                  maxLength={100}
                 />
                 <p className="text-xs text-gray-500 mt-2 font-mono text-right">
-                  {customRewardText.length}/20 characters
+                  {customRewardText.length}/100 characters
                 </p>
               </div>
 
@@ -395,6 +394,14 @@ export default function RewardsPage() {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      <PurchaseSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        itemName={purchasedItemName}
+        itemType="bounty"
+      />
 
       <div className="min-h-screen bg-black text-white p-8 md:p-4">
         {/* Header */}

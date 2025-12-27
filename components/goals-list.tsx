@@ -1,9 +1,10 @@
 "use client"
 
-import { ChevronDown, X, Calendar, Zap, Target, MoreVertical, Edit2, Trash2 } from "lucide-react"
+import { ChevronDown, X, Calendar, Zap, Target, MoreVertical, Edit2, Trash2, AlertTriangle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { GoalCreationWizard } from "@/components/goal-creation-wizard"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 interface Goal {
   id: string
@@ -37,6 +38,7 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
   const [showGoalMenu, setShowGoalMenu] = useState<string | null>(null)
   const [goalToEdit, setGoalToEdit] = useState<Goal | null>(null)
   const [isEditWizardOpen, setIsEditWizardOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"active" | "overdue">("active")
 
   useEffect(() => {
     fetchGoals()
@@ -57,7 +59,6 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
       .from("goals")
       .select("*")
       .eq("user_id", user.id)
-      .eq("status", "active")
       .order("created_at", { ascending: false })
 
     if (!error && data) {
@@ -66,11 +67,28 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     setLoading(false)
   }
 
-  const goalsByTimeline = {
-    daily: goals.filter((g) => g.timeline === "daily"),
-    weekly: goals.filter((g) => g.timeline === "weekly"),
-    monthly: goals.filter((g) => g.timeline === "monthly"),
-    yearly: goals.filter((g) => g.timeline === "yearly"),
+  const isGoalOverdue = (goal: Goal) => {
+    if (!goal.target_date || goal.status === "completed") return false
+    const now = new Date()
+    const target = new Date(goal.target_date)
+    return target < now
+  }
+
+  const activeGoals = goals.filter((g) => !isGoalOverdue(g))
+  const overdueGoals = goals.filter((g) => isGoalOverdue(g))
+
+  const activeGoalsByTimeline = {
+    daily: activeGoals.filter((g) => g.timeline === "daily"),
+    weekly: activeGoals.filter((g) => g.timeline === "weekly"),
+    monthly: activeGoals.filter((g) => g.timeline === "monthly"),
+    yearly: activeGoals.filter((g) => g.timeline === "yearly"),
+  }
+
+  const overdueGoalsByTimeline = {
+    daily: overdueGoals.filter((g) => g.timeline === "daily"),
+    weekly: overdueGoals.filter((g) => g.timeline === "weekly"),
+    monthly: overdueGoals.filter((g) => g.timeline === "monthly"),
+    yearly: overdueGoals.filter((g) => g.timeline === "yearly"),
   }
 
   const toggleSection = (section: "daily" | "weekly" | "monthly" | "yearly") => {
@@ -134,7 +152,7 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
     return text.substring(0, limit) + "..."
   }
 
-  const GoalCard = ({ goal }: { goal: Goal }) => {
+  const GoalCard = ({ goal, showOverdueWarning }: { goal: Goal; showOverdueWarning?: boolean }) => {
     const daysRemaining = getDaysRemaining(goal.target_date)
     const estimatedHours = goal.target_hours || Math.ceil(goal.max_xp / 300)
     const estimatedAura = estimatedHours * 10
@@ -143,8 +161,14 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
       <div className="relative">
         <button
           onClick={() => setSelectedGoal(goal)}
-          className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors text-left group w-full"
+          className={`bg-card border ${showOverdueWarning ? "border-red-500/50" : "border-border"} rounded-lg p-4 hover:border-primary/50 transition-colors text-left group w-full`}
         >
+          {showOverdueWarning && (
+            <div className="absolute top-2 right-2 bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 border border-red-500/30 z-10">
+              <AlertTriangle className="w-3 h-3" />
+              OVERDUE
+            </div>
+          )}
           <div className="flex items-start justify-between mb-3">
             <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors flex-1">
               {truncateText(goal.title, 30)}
@@ -256,84 +280,183 @@ export function GoalsList({ onGoalSelect }: GoalsListProps) {
 
   return (
     <div className="mt-8">
-      {goalsByTimeline.daily.length > 0 && (
-        <>
-          <SectionHeader
-            title="Daily Goals"
-            count={goalsByTimeline.daily.length}
-            section="daily"
-            color="bg-green-500/70"
-          />
-          {expandedSections.daily && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {goalsByTimeline.daily.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "active" | "overdue")} className="w-full mb-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Active ({activeGoals.length})
+          </TabsTrigger>
+          <TabsTrigger value="overdue" className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Overdue ({overdueGoals.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-6 mt-6">
+          {activeGoalsByTimeline.daily.length > 0 && (
+            <>
+              <SectionHeader
+                title="Daily Goals"
+                count={activeGoalsByTimeline.daily.length}
+                section="daily"
+                color="bg-green-500/70"
+              />
+              {expandedSections.daily && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {activeGoalsByTimeline.daily.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeGoalsByTimeline.weekly.length > 0 && (
+            <>
+              <SectionHeader
+                title="Weekly Goals"
+                count={activeGoalsByTimeline.weekly.length}
+                section="weekly"
+                color="bg-blue-500/70"
+              />
+              {expandedSections.weekly && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {activeGoalsByTimeline.weekly.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeGoalsByTimeline.monthly.length > 0 && (
+            <>
+              <SectionHeader
+                title="Monthly Goals"
+                count={activeGoalsByTimeline.monthly.length}
+                section="monthly"
+                color="bg-purple-500/70"
+              />
+              {expandedSections.monthly && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {activeGoalsByTimeline.monthly.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeGoalsByTimeline.yearly.length > 0 && (
+            <>
+              <SectionHeader
+                title="Yearly Goals"
+                count={activeGoalsByTimeline.yearly.length}
+                section="yearly"
+                color="bg-amber-500/70"
+              />
+              {expandedSections.yearly && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeGoalsByTimeline.yearly.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeGoals.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg mb-2">Your Quest Log is empty</p>
+              <p className="text-sm text-muted-foreground">Start a new campaign by creating your first goal</p>
             </div>
           )}
-        </>
-      )}
+        </TabsContent>
 
-      {goalsByTimeline.weekly.length > 0 && (
-        <>
-          <SectionHeader
-            title="Weekly Goals"
-            count={goalsByTimeline.weekly.length}
-            section="weekly"
-            color="bg-blue-500/70"
-          />
-          {expandedSections.weekly && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {goalsByTimeline.weekly.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
+        <TabsContent value="overdue" className="space-y-6 mt-6">
+          {overdueGoals.length === 0 ? (
+            <div className="text-center py-12 space-y-4">
+              <div className="relative inline-block">
+                <Target className="w-16 h-16 text-green-500/30" />
+                <div className="absolute inset-0 bg-green-500/10 blur-xl rounded-full animate-pulse" />
+              </div>
+              <p className="text-muted-foreground text-lg font-semibold">All goals on track!</p>
+              <p className="text-sm text-muted-foreground">No overdue goals. Keep pushing forward!</p>
             </div>
-          )}
-        </>
-      )}
+          ) : (
+            <>
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-red-400 mb-1">Overdue Goals</h3>
+                    <p className="text-sm text-muted-foreground">
+                      You have {overdueGoals.length} overdue goal{overdueGoals.length > 1 ? "s" : ""}. Complete them to
+                      maintain your momentum and avoid streak resets.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-      {goalsByTimeline.monthly.length > 0 && (
-        <>
-          <SectionHeader
-            title="Monthly Goals"
-            count={goalsByTimeline.monthly.length}
-            section="monthly"
-            color="bg-purple-500/70"
-          />
-          {expandedSections.monthly && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {goalsByTimeline.monthly.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+              {overdueGoalsByTimeline.daily.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-red-400 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                    Daily Goals
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {overdueGoalsByTimeline.daily.map((goal) => (
+                      <GoalCard key={goal.id} goal={goal} showOverdueWarning />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-      {goalsByTimeline.yearly.length > 0 && (
-        <>
-          <SectionHeader
-            title="Yearly Goals"
-            count={goalsByTimeline.yearly.length}
-            section="yearly"
-            color="bg-amber-500/70"
-          />
-          {expandedSections.yearly && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {goalsByTimeline.yearly.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+              {overdueGoalsByTimeline.weekly.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-red-400 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                    Weekly Goals
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {overdueGoalsByTimeline.weekly.map((goal) => (
+                      <GoalCard key={goal.id} goal={goal} showOverdueWarning />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-      {goals.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg mb-2">Your Quest Log is empty</p>
-          <p className="text-sm text-muted-foreground">Start a new campaign by creating your first goal</p>
-        </div>
-      )}
+              {overdueGoalsByTimeline.monthly.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-red-400 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                    Monthly Goals
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {overdueGoalsByTimeline.monthly.map((goal) => (
+                      <GoalCard key={goal.id} goal={goal} showOverdueWarning />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {overdueGoalsByTimeline.yearly.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-red-400 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                    Yearly Goals
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {overdueGoalsByTimeline.yearly.map((goal) => (
+                      <GoalCard key={goal.id} goal={goal} showOverdueWarning />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {selectedGoal && (
         <div
