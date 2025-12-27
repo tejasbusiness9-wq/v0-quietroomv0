@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { Trophy, Crown, Medal, Zap, TrendingUp } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { getLevelInfo } from "@/lib/leveling-system"
+import { dataCache } from "@/lib/data-cache"
+import { prefetchDashboardData, prefetchGoalsData } from "@/lib/data-prefetch"
 
 interface LeaderboardEntry {
   id: string
@@ -27,10 +29,42 @@ export default function LeaderboardPage() {
   const [claiming, setClaiming] = useState(false)
 
   useEffect(() => {
+    const prefetchOtherPages = async () => {
+      const supabase = getSupabaseBrowserClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        // Prefetch dashboard and goals in background
+        setTimeout(() => {
+          prefetchDashboardData(user.id)
+          prefetchGoalsData(user.id)
+        }, 1000)
+      }
+    }
+    prefetchOtherPages()
+  }, [])
+
+  useEffect(() => {
     fetchLeaderboard()
   }, [])
 
   const fetchLeaderboard = async () => {
+    // Check cache first
+    const cached = dataCache.get("leaderboard")
+    if (cached) {
+      console.log("[v0] Using cached leaderboard data")
+      setLeaderboard(cached)
+      setLoading(false)
+
+      const supabase = getSupabaseBrowserClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setCurrentUserId(user?.id || null)
+      return
+    }
+
     setLoading(true)
     const supabase = getSupabaseBrowserClient()
 
@@ -74,9 +108,11 @@ export default function LeaderboardPage() {
           }
         })
         setLeaderboard(enrichedData)
+        dataCache.set("leaderboard", enrichedData, 60000)
       }
     } else {
       setLeaderboard(data || [])
+      dataCache.set("leaderboard", data || [], 60000)
     }
     setLoading(false)
   }
