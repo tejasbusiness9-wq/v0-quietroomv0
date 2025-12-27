@@ -7,9 +7,10 @@ interface BountyUseModalProps {
   isOpen: boolean
   onClose: () => void
   itemName: string
+  customText?: string
 }
 
-export function BountyUseModal({ isOpen, onClose, itemName }: BountyUseModalProps) {
+export function BountyUseModal({ isOpen, onClose, itemName, customText }: BountyUseModalProps) {
   if (!isOpen) return null
 
   return (
@@ -43,7 +44,7 @@ export function BountyUseModal({ isOpen, onClose, itemName }: BountyUseModalProp
               Permission Granted!
             </h2>
             <p className="text-gray-300 text-lg">You may now enjoy guilt-free:</p>
-            <p className="text-xl font-bold text-white font-mono">{itemName}</p>
+            <p className="text-xl font-bold text-white font-mono">{customText || itemName}</p>
           </div>
 
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400 font-mono">

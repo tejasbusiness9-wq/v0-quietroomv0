@@ -27,6 +27,7 @@ interface InventoryItem {
   quantity: number
   is_used: boolean
   purchased_at: string
+  custom_reward_text?: string
   reward_item?: RewardItem
 }
 
@@ -46,6 +47,8 @@ export default function RewardsPage() {
   const [showBountyModal, setShowBountyModal] = useState(false)
   const [showZenModal, setShowZenModal] = useState(false)
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null)
+  const [showWildcardModal, setShowWildcardModal] = useState(false)
+  const [customRewardText, setCustomRewardText] = useState("")
 
   const supabase = createBrowserClient()
 
@@ -196,6 +199,70 @@ export default function RewardsPage() {
     }
   }
 
+  const handleWildcardPurchase = async () => {
+    if (!customRewardText.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please enter what you want to reward yourself with.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const wildcardPrice = 100
+
+      if (auraBalance < wildcardPrice) {
+        toast({
+          title: "Insufficient Aura",
+          description: `You need ${wildcardPrice - auraBalance} more Aura to purchase this.`,
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Deduct aura
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ aura: auraBalance - wildcardPrice })
+        .eq("user_id", user.id)
+
+      if (updateError) throw updateError
+
+      // Add to inventory with custom text
+      const { error: inventoryError } = await supabase.from("inventory").insert({
+        user_id: user.id,
+        item_type: "wildcard_permission",
+        quantity: 1,
+        is_used: false,
+        custom_reward_text: customRewardText.trim(),
+      })
+
+      if (inventoryError) throw inventoryError
+
+      toast({
+        title: "Wildcard Created!",
+        description: `Your custom reward "${customRewardText}" has been added to inventory.`,
+      })
+
+      setShowWildcardModal(false)
+      setCustomRewardText("")
+      fetchData()
+    } catch (error) {
+      console.error("Wildcard purchase error:", error)
+      toast({
+        title: "Purchase Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleVideoError = (itemName: string, itemUrl: string, error: any) => {
     setVideoErrors((prev) => new Set(prev).add(itemName))
   }
@@ -250,6 +317,73 @@ export default function RewardsPage() {
         }}
         itemName={selectedInventoryItem?.reward_item?.name || ""}
       />
+
+      {/* Wildcard Permission Modal */}
+      {showWildcardModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setShowWildcardModal(false)}
+        >
+          <div
+            className="relative bg-gradient-to-br from-purple-900/90 via-gray-900/90 to-pink-900/90 border-2 border-purple-500/50 rounded-3xl p-8 shadow-2xl max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowWildcardModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <Sparkles className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-purple-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2 font-mono">What is your desire, Operator?</h2>
+                <p className="text-gray-400 text-sm">Create your own custom reward. Any legal move is allowed.</p>
+              </div>
+
+              <div>
+                <textarea
+                  value={customRewardText}
+                  onChange={(e) => setCustomRewardText(e.target.value)}
+                  placeholder="e.g., Eat a whole pizza, Play 2 hours of GTA, Watch anime all day..."
+                  className="w-full h-32 bg-black/50 border border-purple-500/30 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 resize-none font-mono"
+                  maxLength={200}
+                />
+                <p className="text-xs text-gray-500 mt-2 font-mono text-right">
+                  {customRewardText.length}/200 characters
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-black/30 rounded-xl border border-purple-500/20">
+                <span className="text-gray-400 text-sm font-mono">Cost:</span>
+                <div className="flex items-center gap-2">
+                  <img src="/images/aura.png" alt="Aura" className="w-6 h-6" />
+                  <span className="text-2xl font-bold text-purple-400 font-mono">100</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowWildcardModal(false)}
+                  className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleWildcardPurchase}
+                  disabled={!customRewardText.trim() || auraBalance < 100}
+                  className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Reward
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="min-h-screen bg-black text-white p-8 md:p-4">
         {/* Header */}
@@ -384,6 +518,48 @@ export default function RewardsPage() {
 
           {activeTab === "bounty" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Wildcard Permission card */}
+              <div className="group relative bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-md border-2 border-purple-500/50 rounded-xl overflow-hidden hover:border-purple-400/70 transition-all hover:scale-105 shadow-lg shadow-purple-500/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                {/* Premium Badge */}
+                <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-xs font-bold font-mono">
+                  PREMIUM
+                </div>
+
+                <div className="relative p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center animate-pulse">
+                      <Sparkles className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white font-mono">Wildcard Permission</h3>
+                      <p className="text-xs text-purple-400 font-mono uppercase tracking-wider">Custom Reward</p>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-400 text-sm mb-6">
+                    Write your own reward. Any legal move is allowed. Create a personalized permission just for you.
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img src="/images/aura.png" alt="Aura" className="w-6 h-6" />
+                      <span className="text-2xl font-bold text-purple-400 font-mono">100</span>
+                    </div>
+                    <button
+                      onClick={() => setShowWildcardModal(true)}
+                      disabled={auraBalance < 100}
+                      className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Create
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Existing bounty items */}
               {bountyItems.map((item) => {
                 const Icon = getIconComponent(item.icon_name)
                 return (
@@ -437,11 +613,62 @@ export default function RewardsPage() {
                 </div>
               ) : (
                 inventoryItems.map((item) => {
+                  const isWildcard = item.item_type === "wildcard_permission"
                   const rewardItem = item.reward_item
+
+                  if (isWildcard) {
+                    return (
+                      <div
+                        key={item.id}
+                        className={`relative bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-md border-2 rounded-xl overflow-hidden ${
+                          item.is_used ? "opacity-50 border-gray-700" : "border-purple-500/50"
+                        }`}
+                      >
+                        {item.is_used && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10">
+                            <div className="text-center">
+                              <Check className="w-16 h-16 text-green-400 mx-auto mb-2" />
+                              <p className="text-green-400 font-mono font-bold">USED</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="relative p-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                              <Sparkles className="w-6 h-6 text-purple-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-bold text-white font-mono">Wildcard Permission</h3>
+                              <p className="text-xs text-purple-400 font-mono uppercase">Custom Reward</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-black/30 border border-purple-500/20 rounded-lg p-4 mb-4">
+                            <p className="text-gray-300 text-sm italic">"{item.custom_reward_text}"</p>
+                          </div>
+
+                          <p className="text-gray-400 text-xs mb-4">
+                            Purchased {new Date(item.purchased_at).toLocaleDateString()}
+                          </p>
+
+                          {!item.is_used && (
+                            <button
+                              onClick={() => handleUseBounty(item)}
+                              className="w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/50"
+                            >
+                              <Check className="w-4 h-4" />
+                              Use Wildcard
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  }
+
                   if (!rewardItem) return null
 
                   const Icon = getIconComponent(rewardItem.icon_name)
-                  const isSystem = rewardItem.category === "system"
                   const hasVideoError = videoErrors.has(rewardItem.name)
 
                   return (
@@ -488,14 +715,16 @@ export default function RewardsPage() {
 
                         {!item.is_used && (
                           <button
-                            onClick={() => (isSystem ? handleAddToZen(item) : handleUseBounty(item))}
+                            onClick={() =>
+                              rewardItem.category === "system" ? handleAddToZen(item) : handleUseBounty(item)
+                            }
                             className={`w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                              isSystem
+                              rewardItem.category === "system"
                                 ? "bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-lg hover:shadow-cyan-500/50"
                                 : "bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/50"
                             }`}
                           >
-                            {isSystem ? (
+                            {rewardItem.category === "system" ? (
                               <>
                                 <Zap className="w-4 h-4" />
                                 Add to Zen
