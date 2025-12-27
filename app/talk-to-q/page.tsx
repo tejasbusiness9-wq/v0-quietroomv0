@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, Sparkles, Loader2, Menu, X, Calendar } from "lucide-react"
+import { Send, Loader2, Menu, X, Calendar, Mic, MicOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -36,6 +36,47 @@ export default function TalkToQPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [isLoadingSession, setIsLoadingSession] = useState(false)
+
+  const [isListening, setIsListening] = useState(false)
+  const [recognition, setRecognition] = useState<any>(null)
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition
+      const recognitionInstance = new SpeechRecognition()
+      recognitionInstance.continuous = false
+      recognitionInstance.interimResults = false
+      recognitionInstance.lang = "en-US"
+
+      recognitionInstance.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript
+        setInput((prev) => prev + " " + transcript)
+      }
+
+      recognitionInstance.onend = () => {
+        setIsListening(false)
+      }
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error("[v0] Speech recognition error:", event.error)
+        setIsListening(false)
+      }
+
+      setRecognition(recognitionInstance)
+    }
+  }, [])
+
+  const toggleListening = () => {
+    if (!recognition) return
+
+    if (isListening) {
+      recognition.stop()
+      setIsListening(false)
+    } else {
+      recognition.start()
+      setIsListening(true)
+    }
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -162,7 +203,7 @@ export default function TalkToQPage() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, isLoading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -198,6 +239,7 @@ export default function TalkToQPage() {
       role: "assistant",
       content: "",
     }
+
     setMessages((prev) => [...prev, assistantMessage])
 
     try {
@@ -235,7 +277,10 @@ export default function TalkToQPage() {
         const chunk = decoder.decode(value, { stream: true })
         fullContent += chunk
 
-        setMessages((prev) => prev.map((m) => (m.id === assistantMessageId ? { ...m, content: fullContent } : m)))
+        setMessages((prev) => {
+          const newMessages = prev.map((m) => (m.id === assistantMessageId ? { ...m, content: fullContent } : m))
+          return newMessages
+        })
       }
 
       if (!fullContent) {
@@ -257,9 +302,9 @@ export default function TalkToQPage() {
 
       if (error instanceof Error) {
         if (error.message.includes("quota")) {
-          errorMessage = "⚠️ API quota exceeded. Please check your Gemini API key or try again later."
+          errorMessage = "⚠️ API quota exceeded. Please check your API key or try again later."
         } else if (error.message.includes("API key")) {
-          errorMessage = "⚠️ API key error. Please verify your Gemini API key is valid."
+          errorMessage = "⚠️ API key error. Please verify your API key is valid."
         } else {
           errorMessage = `Error: ${error.message}`
         }
@@ -360,8 +405,8 @@ export default function TalkToQPage() {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center py-12 space-y-4">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <Sparkles className="w-10 h-10 text-primary" />
+                  <div className="w-24 h-24 mx-auto">
+                    <img src="/images/qmascot.png" alt="Q Mascot" className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">Talk to Q</h2>
@@ -394,7 +439,8 @@ export default function TalkToQPage() {
                     className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
-                      <Avatar className="w-10 h-10 border-2 border-primary/30">
+                      <Avatar className="w-10 h-10 border-2 border-primary/30 shrink-0">
+                        <AvatarImage src="/images/qmascot.png" alt="Q" />
                         <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
                           Q
                         </AvatarFallback>
@@ -426,13 +472,17 @@ export default function TalkToQPage() {
 
               {isLoading && (
                 <div className="flex gap-4 justify-start">
-                  <Avatar className="w-10 h-10 border-2 border-primary/30">
+                  <Avatar className="w-10 h-10 border-2 border-primary/30 shrink-0">
+                    <AvatarImage src="/images/qmascot.png" alt="Q" />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
                       Q
                     </AvatarFallback>
                   </Avatar>
                   <div className="bg-card border border-border rounded-2xl px-5 py-3">
-                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      <span className="text-sm text-muted-foreground animate-pulse">Q is thinking...</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -458,6 +508,17 @@ export default function TalkToQPage() {
                   }}
                 />
               </div>
+              {recognition && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={isListening ? "default" : "outline"}
+                  onClick={toggleListening}
+                  className="h-[60px] w-[60px] rounded-xl shrink-0"
+                >
+                  {isListening ? <MicOff className="w-5 h-5 animate-pulse" /> : <Mic className="w-5 h-5" />}
+                </Button>
+              )}
               <Button
                 type="submit"
                 size="icon"
