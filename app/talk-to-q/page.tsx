@@ -25,6 +25,7 @@ interface ChatSession {
 
 export default function TalkToQPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const supabase = getSupabaseBrowserClient()
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -92,6 +93,7 @@ export default function TalkToQPage() {
       setUser(user)
       if (user) {
         loadSessions(user.id)
+        loadUserProfile(user.id)
       }
     })
   }, [supabase])
@@ -139,6 +141,21 @@ export default function TalkToQPage() {
       setMessages(loadedMessages)
     } catch (error) {
       console.error("[v0] Error loading messages:", error)
+    }
+  }
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("user_id", userId)
+        .single()
+
+      if (error) throw error
+      setUserProfile(data)
+    } catch (error) {
+      console.error("[v0] Error loading user profile:", error)
     }
   }
 
@@ -224,8 +241,9 @@ export default function TalkToQPage() {
       setActiveSessionId(sessionId)
     }
 
+    const userMessageId = `user-${Date.now()}`
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: userMessageId,
       role: "user",
       content: input.trim(),
     }
@@ -241,7 +259,7 @@ export default function TalkToQPage() {
       content: userMessage.content,
     })
 
-    const assistantMessageId = (Date.now() + 1).toString()
+    const assistantMessageId = `assistant-${Date.now()}`
     const assistantMessage: Message = {
       id: assistantMessageId,
       role: "assistant",
@@ -295,7 +313,7 @@ export default function TalkToQPage() {
             role: m.role,
             content: m.content,
           })),
-          userData, // Send comprehensive user stats
+          userData,
         }),
       })
 
@@ -321,9 +339,19 @@ export default function TalkToQPage() {
         fullContent += chunk
 
         setMessages((prev) => {
-          const newMessages = prev.map((m) => (m.id === assistantMessageId ? { ...m, content: fullContent } : m))
+          const newMessages = [...prev]
+          const msgIndex = newMessages.findIndex((m) => m.id === assistantMessageId)
+          if (msgIndex !== -1) {
+            newMessages[msgIndex] = { ...newMessages[msgIndex], content: fullContent }
+          }
           return newMessages
         })
+
+        setTimeout(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+          }
+        }, 50)
       }
 
       if (!fullContent) {
@@ -378,7 +406,8 @@ export default function TalkToQPage() {
     }
   }
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "You"
+  const userDisplayName = userProfile?.display_name || userProfile?.username || user?.email?.split("@")[0] || "You"
+  const userInitial = userDisplayName[0]?.toUpperCase() || "U"
 
   return (
     <div className="flex h-full relative">
@@ -454,9 +483,9 @@ export default function TalkToQPage() {
                   <p className="text-muted-foreground mb-6">Q is ready to help you strategize.</p>
                 </div>
               ) : (
-                messages.map((message, index) => (
+                messages.map((message) => (
                   <div
-                    key={`${index}-${message.content.slice(0, 20)}`}
+                    key={message.id}
                     className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
@@ -488,9 +517,7 @@ export default function TalkToQPage() {
                     </div>
                     {message.role === "user" && (
                       <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <span className="text-primary-foreground text-xs font-bold">
-                          {user?.username?.[0].toUpperCase() || "U"}
-                        </span>
+                        <span className="text-primary-foreground text-xs font-bold">{userInitial}</span>
                       </div>
                     )}
                   </div>
