@@ -371,7 +371,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: rgb(168 85 247);
+    background: rgb(168, 85, 247);
     cursor: pointer;
     border: none;
     box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
@@ -398,5 +398,49 @@
   .volume-slider::-moz-range-thumb:active {
     transform: scale(1.1);
     box-shadow: 0 0 16px rgba(168, 85, 247, 1);
+  }
+
+  /* Custom scrollbar styling for horizontal scroll in goals gallery */
+  /* Custom purple-themed scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(147 51 234) rgba(147, 51, 234, 0.1);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(147, 51, 234, 0.1);
+    border-radius: 9999px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(147 51 234);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(168 85 247);
+  }
+
+  /* Additional scrollbar utilities */
+  .scrollbar-thumb-purple-600::-webkit-scrollbar-thumb {
+    background: rgb(147 51 234);
+  }
+
+  .scrollbar-thumb-purple-500::-webkit-scrollbar-thumb {
+    background: rgb(168 85 247);
+  }
+
+  .scrollbar-track-background\/20::-webkit-scrollbar-track {
+    background: rgba(33, 33, 33, 0.2);
+  }
+
+  .hover\:scrollbar-thumb-purple-500:hover::-webkit-scrollbar-thumb {
+    background: rgb(168 85 247);
   }
 }

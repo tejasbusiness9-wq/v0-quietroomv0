@@ -13,10 +13,13 @@ import {
   Star,
   Crown,
   Flame,
+  Shield,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
+import TerminalDemo from "@/components/terminal-demo"
+import { ZenModeDemo } from "@/components/zen-mode-demo"
 
 export default function LandingPage() {
   return (
@@ -129,6 +132,77 @@ export default function LandingPage() {
               <div className="text-xs md:text-sm text-muted-foreground">Goal Success Rate</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Q Terminal Demo Section */}
+      <section className="py-20 md:py-32 px-4 md:px-6 bg-gradient-to-b from-background to-card/30">
+        <div className="container mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
+                <Image src="/ui/mascot.png" alt="Q Mascot" width={24} height={24} className="w-6 h-6" />
+                <span className="text-sm font-semibold text-primary uppercase tracking-wider">System Operator: Q</span>
+              </div>
+
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                MEET YOUR NEW{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-400 to-primary">
+                  COMMANDING OFFICER
+                </span>
+              </h2>
+
+              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+                Most productivity apps act like a secretary. Quiet Room acts like a Commanding Officer. Q is a
+                high-stakes AI strategist that refuses distractions and demands excellence.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">Deep Strategy</h4>
+                    <p className="text-muted-foreground">Turns vague goals into tactical 1.1, 1.2 steps.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">Anti-Hallucination Protocol</h4>
+                    <p className="text-muted-foreground">Focused on execution, not talk.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">No Fluff</h4>
+                    <p className="text-muted-foreground">Q refuses off-topic requests to keep you on mission.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Content - Terminal Demo */}
+            <div className="flex justify-center lg:justify-end">
+              <TerminalDemo />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Zen Mode Section */}
+      <section className="py-24 px-4 md:px-8 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <ZenModeDemo />
         </div>
       </section>
 

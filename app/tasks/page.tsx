@@ -342,12 +342,6 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
       } relative`}
       onClick={() => setSelectedTask(task)}
     >
-      {showOverdueWarning && (
-        <div className="absolute top-2 right-2 bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 border border-red-500/30">
-          <AlertTriangle className="w-3 h-3" />
-          OVERDUE
-        </div>
-      )}
       <div className="flex items-start gap-4">
         <input
           type="checkbox"

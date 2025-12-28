@@ -222,7 +222,7 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
           Your inspiration board • Add images that motivate you
         </p>
 
-        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-background/20 hover:scrollbar-thumb-purple-500">
           <button
             onClick={() => setIsUploadOpen(true)}
             className="flex-shrink-0 w-40 h-40 md:w-48 md:h-48 rune-card hover:shadow-2xl hover:shadow-primary/25 cursor-pointer transition-all duration-300 flex items-center justify-center group"
@@ -278,7 +278,7 @@ export function GoalsGallery({ onGoalSelect }: GoalsGalleryProps) {
           </Button>
         </div>
 
-        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-background/20 hover:scrollbar-thumb-purple-500">
           {goals.map((goal) => (
             <div
               key={goal.id}
