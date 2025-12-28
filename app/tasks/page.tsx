@@ -134,13 +134,20 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     if (!user) return
 
     let dueDate = null
+    const now = new Date()
+
     if (newTask.when === "today") {
-      dueDate = new Date().toISOString()
+      const endOfToday = new Date(now)
+      endOfToday.setHours(23, 59, 59, 999)
+      dueDate = endOfToday.toISOString()
     } else if (newTask.when === "this-week") {
-      // Set due date to 3 days from now (middle of the week)
-      const threeDaysFromNow = new Date()
-      threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
-      dueDate = threeDaysFromNow.toISOString()
+      const endOfWeek = new Date(now)
+      const dayOfWeek = endOfWeek.getDay() // 0 (Sun) - 6 (Sat)
+      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+
+      endOfWeek.setDate(now.getDate() + daysUntilSunday)
+      endOfWeek.setHours(23, 59, 59, 999)
+      dueDate = endOfWeek.toISOString()
     }
     // For "someday", dueDate remains null
 
@@ -196,12 +203,20 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     if (!user || !taskToEdit) return
 
     let dueDate = taskToEdit.due_date
+    const now = new Date()
+
     if (updatedTask.when === "today") {
-      dueDate = new Date().toISOString()
+      const endOfToday = new Date(now)
+      endOfToday.setHours(23, 59, 59, 999)
+      dueDate = endOfToday.toISOString()
     } else if (updatedTask.when === "this-week") {
-      const threeDaysFromNow = new Date()
-      threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
-      dueDate = threeDaysFromNow.toISOString()
+      const endOfWeek = new Date(now)
+      const dayOfWeek = endOfWeek.getDay()
+      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+
+      endOfWeek.setDate(now.getDate() + daysUntilSunday)
+      endOfWeek.setHours(23, 59, 59, 999)
+      dueDate = endOfWeek.toISOString()
     } else if (updatedTask.when === "someday") {
       dueDate = null
     }
@@ -293,9 +308,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
   const isOverdue = (dueDate?: string, completed?: boolean) => {
     if (!dueDate || completed) return false
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
-    return new Date(dueDate) < today
+    return new Date(dueDate) < new Date()
   }
 
   const tasksByCategory = {
@@ -553,14 +566,16 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
           ) : (
             <div>
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-red-400 mb-1">Streak Warning!</h3>
-                    <p className="text-sm text-muted-foreground">
-                      You have {overdueTasks.length} overdue task{overdueTasks.length > 1 ? "s" : ""}. Complete them to
-                      maintain your streak. At midnight, overdue tasks will reset your streak to 0.
-                    </p>
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-red-400 mb-1">Streak Warning!</h3>
+                      <p className="text-sm text-muted-foreground">
+                        You have {overdueTasks.length} overdue task{overdueTasks.length > 1 ? "s" : ""}. Complete them
+                        to maintain your streak. At midnight, overdue tasks will reset your streak to 0.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

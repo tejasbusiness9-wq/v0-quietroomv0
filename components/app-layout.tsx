@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { memo, useState, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import {
@@ -15,12 +14,13 @@ import {
   MessageSquare,
   Users,
   LogOut,
-  Settings,
-  Search,
+  Bug,
+  HelpCircle,
 } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { getLevelInfo } from "@/lib/leveling-system"
+import { Button } from "@/components/ui/button"
 
 const NavItem = memo(({ item, isActive, onClick }: any) => {
   const Icon = item.icon
@@ -64,6 +64,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
+
+  const [showGuideModal, setShowGuideModal] = useState(false)
+  const [activeGuideTab, setActiveGuideTab] = useState("Overview")
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -199,9 +202,193 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { id: "community", label: "Community", icon: Users, path: "/community" },
   ]
 
+  const guideTabs = ["Overview", "Goals", "Tasks", "Zen", "Q AI", "XP", "Aura System", "Leaderboard"]
+
+  const guideContent: Record<string, { title: string; description: string; features: string[] }> = {
+    Overview: {
+      title: "Welcome to Quiet Room",
+      description:
+        "Your personal productivity companion that gamifies focus and goal achievement. Transform your daily tasks into an RPG-like experience.",
+      features: [
+        "Level up by completing tasks and maintaining focus streaks",
+        "Earn XP and Aura to unlock rewards",
+        "Compete with friends on the leaderboard",
+        "Chat with Q, your AI productivity coach",
+      ],
+    },
+    Goals: {
+      title: "Goals System",
+      description:
+        "Set and track your long-term objectives with weekly, monthly, and yearly goals. Stay aligned with your vision.",
+      features: [
+        "Create goals with specific timelines (weekly, monthly, yearly)",
+        "Track progress with visual indicators",
+        "Break down big goals into actionable milestones",
+        "Earn bonus XP when you complete goals on time",
+      ],
+    },
+    Tasks: {
+      title: "Tasks Management",
+      description:
+        "Organize your daily work with smart task tracking. Every completed task brings you closer to your goals.",
+      features: [
+        "Create tasks with due dates and priorities",
+        "Active and Overdue task views",
+        "Streak resets if overdue tasks exist at midnight",
+        "Earn XP for each completed task",
+      ],
+    },
+    Zen: {
+      title: "Zen Mode",
+      description:
+        "Enter deep focus sessions with our distraction-free Zen Mode. Lock in, eliminate noise, and maximize productivity.",
+      features: [
+        "Fullscreen focus timer with ambient backgrounds",
+        "Earn 2x XP during Zen Mode sessions",
+        "Choose from pre-set durations or custom times",
+        "Give up penalty: Lose XP and Aura if you quit early",
+      ],
+    },
+    "Q AI": {
+      title: "Talk to Q",
+      description:
+        "Your personal AI productivity coach. Q provides guidance, motivation, and accountability to help you crush your goals.",
+      features: [
+        "Get personalized advice on productivity challenges",
+        "Discuss goals, tasks, and strategies",
+        "Receive motivational support when you need it",
+        "AI-powered insights based on your progress",
+      ],
+    },
+    XP: {
+      title: "XP System",
+      description:
+        "Gain experience points by completing tasks, achieving goals, and maintaining focus streaks. Level up to unlock new ranks.",
+      features: [
+        "Earn XP: Tasks (+10), Goals (+50), Zen Mode (2x multiplier)",
+        "Level progression unlocks new class titles",
+        "Track daily, weekly, and monthly XP gains",
+        "Your XP reflects your productivity consistency",
+      ],
+    },
+    "Aura System": {
+      title: "Aura Currency",
+      description:
+        "Aura is your in-app currency earned through consistent productivity. Spend it on rewards and custom permissions.",
+      features: [
+        "Earn Aura by completing tasks and goals",
+        "Spend on Bounty rewards (breaks, treats, activities)",
+        "Purchase Wildcard Permissions for custom rewards",
+        "Aura incentivizes sustainable productivity habits",
+      ],
+    },
+    Leaderboard: {
+      title: "Leaderboard",
+      description: "Compete with other Quiet Room users and see where you rank. Friendly competition fuels motivation.",
+      features: [
+        "Daily, weekly, and monthly leaderboards",
+        "See top performers in your region or globally",
+        "Track your rank and progress over time",
+        "Celebrate wins and learn from the best",
+      ],
+    },
+  }
+
   return (
     <div className="dark">
       <audio ref={audioRef} src="/images/menu.mp3" preload="auto" />
+
+      {showGuideModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl shadow-primary/20 flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                  <HelpCircle className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Quiet Room Guide</h2>
+                  <p className="text-sm text-muted-foreground">Learn how to master your productivity</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 px-6 py-4 border-b border-border overflow-x-auto">
+              {guideTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveGuideTab(tab)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                    activeGuideTab === tab
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Video Placeholder */}
+                <div className="bg-muted/50 rounded-xl overflow-hidden border border-border aspect-video flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <p className="text-muted-foreground font-medium">Video Tutorial Coming Soon</p>
+                    <p className="text-sm text-muted-foreground/60 mt-1">20-30 second overview of {activeGuideTab}</p>
+                  </div>
+                </div>
+
+                {/* Info Content */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-foreground mb-2">{guideContent[activeGuideTab]?.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{guideContent[activeGuideTab]?.description}</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
+                      Key Features
+                    </h4>
+                    <ul className="space-y-2">
+                      {guideContent[activeGuideTab]?.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-foreground leading-relaxed">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex h-screen bg-background text-foreground">
         {/* Sidebar */}
@@ -287,120 +474,44 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
           <div className="bg-background border-b border-border px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="relative flex-1 max-w-md" ref={searchRef}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
-                  placeholder="Search goals, tasks, or players..."
-                  className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-
-                {showSearchResults && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-2xl shadow-primary/10 max-h-96 overflow-y-auto z-50">
-                    {searchLoading ? (
-                      <div className="p-4 text-center text-muted-foreground">
-                        <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
-                        Searching...
-                      </div>
-                    ) : searchResults.length === 0 ? (
-                      <div className="p-4 text-center text-muted-foreground">No results found</div>
-                    ) : (
-                      <div className="py-2">
-                        {/* Tasks */}
-                        {searchResults.some((r) => r.type === "task") && (
-                          <div>
-                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">Tasks</div>
-                            {searchResults
-                              .filter((r) => r.type === "task")
-                              .map((result) => (
-                                <button
-                                  key={result.id}
-                                  onClick={() => {
-                                    router.push("/tasks")
-                                    setShowSearchResults(false)
-                                    setSearchQuery("")
-                                  }}
-                                  className="w-full px-4 py-2 hover:bg-muted/50 transition-colors text-left flex items-center gap-3"
-                                >
-                                  <CheckSquare className="w-4 h-4 text-primary" />
-                                  <div>
-                                    <p className="font-medium text-foreground">{result.title}</p>
-                                    {result.description && (
-                                      <p className="text-xs text-muted-foreground truncate">{result.description}</p>
-                                    )}
-                                  </div>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-
-                        {/* Goals */}
-                        {searchResults.some((r) => r.type === "goal") && (
-                          <div>
-                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">Goals</div>
-                            {searchResults
-                              .filter((r) => r.type === "goal")
-                              .map((result) => (
-                                <button
-                                  key={result.id}
-                                  onClick={() => {
-                                    router.push("/goals")
-                                    setShowSearchResults(false)
-                                    setSearchQuery("")
-                                  }}
-                                  className="w-full px-4 py-2 hover:bg-muted/50 transition-colors text-left flex items-center gap-3"
-                                >
-                                  <Target className="w-4 h-4 text-primary" />
-                                  <div>
-                                    <p className="font-medium text-foreground">{result.title}</p>
-                                    {result.description && (
-                                      <p className="text-xs text-muted-foreground truncate">{result.description}</p>
-                                    )}
-                                  </div>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-
-                        {/* Profiles */}
-                        {searchResults.some((r) => r.type === "profile") && (
-                          <div>
-                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">Users</div>
-                            {searchResults
-                              .filter((r) => r.type === "profile")
-                              .map((result) => (
-                                <button
-                                  key={result.user_id}
-                                  onClick={() => {
-                                    router.push(`/profile/${result.user_id}`)
-                                    setShowSearchResults(false)
-                                    setSearchQuery("")
-                                  }}
-                                  className="w-full px-4 py-2 hover:bg-muted/50 transition-colors text-left flex items-center gap-3"
-                                >
-                                  <User className="w-4 h-4 text-primary" />
-                                  <p className="font-medium text-foreground">
-                                    {result.display_name || result.username}
-                                  </p>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+            <div className="flex items-center gap-4">
+              {/* Streak Badge */}
+              <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+                <span className="text-2xl">🔥</span>
+                <span className="text-sm font-bold text-foreground">{userLevel} days</span>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-3 ml-4 pl-4 border-l border-border">
+
+            {/* Right side buttons */}
+            <div className="flex items-center gap-3">
+              {/* Bug/Feedback Button */}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  console.log("[v0] Bug/Feedback button clicked")
+                  window.open("https://wa.me/917219287449", "_blank")
+                }}
+                className="text-foreground hover:text-primary hover:bg-muted/50 gap-2 border border-border"
+              >
+                <Bug className="w-4 h-4" />
+                <span className="text-sm font-medium">Bug/Feedback</span>
+              </Button>
+
+              {/* Guide Button */}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  console.log("[v0] Guide button clicked")
+                  setShowGuideModal(true)
+                }}
+                className="text-foreground hover:text-primary hover:bg-muted/50 gap-2 border border-border"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">Guide</span>
+              </Button>
+
+              {/* Profile Section */}
+              <div className="flex items-center gap-3 ml-2 pl-4 border-l border-border">
                 <div className="text-right">
                   <p className="font-semibold text-foreground">{userName}</p>
                   <p className="text-xs text-muted-foreground">
@@ -415,7 +526,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground">
-                    {userLevel}
+                    {userName?.[0]?.toUpperCase() || "U"}
                   </div>
                 )}
               </div>

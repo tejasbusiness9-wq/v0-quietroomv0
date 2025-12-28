@@ -134,19 +134,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   }
 
   const handleGiveUp = () => {
-    setIsRunning(false)
-    setIsFullscreen(false)
-    setTimerStartTimestamp(null)
-    setTimeLeft(initialMinutes * 60)
-    setShowGiveUpConfirm(false) // Changed from setShowGiveUpModal
-    setSelectedGoal("none")
-    setSelectedTask("none")
-    // Reset timer without any rewards
-    toast({
-      title: "Session Ended",
-      description: "No rewards earned. Try again when ready.",
-      variant: "destructive",
-    })
+    setShowGiveUpConfirm(true)
   }
 
   const confirmGiveUp = () => {
@@ -1128,11 +1116,6 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
                       </p>
                     )}
                   </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full">
-                  <span className="text-3xl">⚡</span>
-                  <span className="text-xl font-bold text-yellow-400">Earning {Math.floor(initialMinutes * 5)} XP</span>
                 </div>
 
                 <Button
