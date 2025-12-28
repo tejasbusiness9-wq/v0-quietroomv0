@@ -35,6 +35,8 @@ import {
   Calendar,
   X,
   Timer,
+  Bug,
+  HelpCircle,
 } from "lucide-react"
 import { StreakCounter } from "@/components/streak-counter"
 import { WeeklyXPChart } from "@/components/weekly-xp-chart"
@@ -114,6 +116,8 @@ export default function DashboardPage() {
   const [profileStats, setProfileStats] = useState<any>(null)
   const [selectedTask, setSelectedTask] = useState<any | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
+  const [guideActiveTab, setGuideActiveTab] = useState("overview")
 
   useEffect(() => {
     fetchProfileData()
@@ -752,7 +756,37 @@ export default function DashboardPage() {
               </button>
               <StreakCounter userId={user?.id || ""} />
             </div>
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <button
+                onClick={() => window.open("https://wa.me/917219287449", "_blank")}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-sm text-muted-foreground hover:text-foreground"
+                aria-label="Bug/Feedback"
+              >
+                <Bug className="w-4 h-4" />
+                <span>Bug/Feedback</span>
+              </button>
+              <button
+                onClick={() => setShowGuideModal(true)}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-sm text-muted-foreground hover:text-foreground"
+                aria-label="Guide"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>Guide</span>
+              </button>
+              <button
+                onClick={() => window.open("https://wa.me/917219287449", "_blank")}
+                className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+                aria-label="Bug/Feedback"
+              >
+                <Bug className="w-5 h-5 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => setShowGuideModal(true)}
+                className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+                aria-label="Guide"
+              >
+                <HelpCircle className="w-5 h-5 text-muted-foreground" />
+              </button>
               <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-border">
                 <div className="text-right">
                   <p className="font-semibold text-foreground text-sm">{userName}</p>
@@ -791,6 +825,264 @@ export default function DashboardPage() {
         </main>
         {showXPToast && <XpToast xpAmount={xpToastData.xp} message={xpToastData.message} />}
         {showLevelUp && <LevelUpCelebration level={newLevel} />}
+
+        {showGuideModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card border border-border rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 md:p-6 border-b border-border">
+                <h2 className="text-2xl font-bold text-foreground">Quiet Room Guide</h2>
+                <button
+                  onClick={() => setShowGuideModal(false)}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-2 px-4 md:px-6 pt-4 border-b border-border overflow-x-auto">
+                {[
+                  { id: "overview", label: "Overview" },
+                  { id: "goals", label: "Goals" },
+                  { id: "tasks", label: "Tasks" },
+                  { id: "zen", label: "Zen Mode" },
+                  { id: "q-ai", label: "Q AI" },
+                  { id: "xp", label: "XP System" },
+                  { id: "aura", label: "Aura System" },
+                  { id: "leaderboard", label: "Leaderboard" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setGuideActiveTab(tab.id)}
+                    className={`px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
+                      guideActiveTab === tab.id
+                        ? "text-primary border-b-2 border-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Content Area */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Video Placeholder */}
+                  <div className="bg-muted rounded-xl aspect-video flex items-center justify-center border border-border">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <HelpCircle className="w-8 h-8 text-primary" />
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        Video tutorial placeholder
+                        <br />
+                        (20-30 seconds)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Info Content */}
+                  <div className="space-y-4">
+                    {guideActiveTab === "overview" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Welcome to Quiet Room</h3>
+                        <p className="text-muted-foreground">
+                          Quiet Room is a gamified productivity platform that helps you turn focus into XP. Complete
+                          tasks, maintain streaks, and level up your productivity journey.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Track your daily tasks and goals</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Zap className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Earn XP and level up by completing activities</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Compete on the leaderboard with other players</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "goals" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Goals System</h3>
+                        <p className="text-muted-foreground">
+                          Set weekly, monthly, or yearly goals to track your long-term progress. Each goal can have
+                          multiple milestones and rewards.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Target className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Create goals with specific timelines</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Target className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Break goals into manageable milestones</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Target className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Track completion percentage and deadline</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "tasks" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Tasks Management</h3>
+                        <p className="text-muted-foreground">
+                          Daily tasks are your main way to earn XP. Complete tasks before their deadline to maintain
+                          your streak and earn rewards.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Tasks due today must be completed by 11:59 PM</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Overdue tasks reset your daily streak at midnight</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>View Active and Overdue tabs to manage priorities</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "zen" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Zen Mode</h3>
+                        <p className="text-muted-foreground">
+                          Enter fullscreen focus sessions to maximize productivity. Earn bonus XP for completing Zen
+                          Mode sessions without giving up.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Timer className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Set custom focus durations</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Timer className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Distraction-free fullscreen mode</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Timer className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Earn bonus XP for completion</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "q-ai" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Q AI Assistant</h3>
+                        <p className="text-muted-foreground">
+                          Chat with Q, your personal productivity AI. Get advice on tasks, motivation, and strategies to
+                          overcome procrastination.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <MessageSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Ask for productivity tips and strategies</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <MessageSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Get personalized advice based on your progress</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <MessageSquare className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Use starter prompts for quick help</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "xp" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">XP System</h3>
+                        <p className="text-muted-foreground">
+                          Earn XP by completing tasks and activities. Level up to unlock rewards and compete on the
+                          leaderboard.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Zap className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Complete tasks to earn XP</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Zap className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Level up to receive 50 Aura bonus</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Zap className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Track your weekly XP progress</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "aura" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Aura System</h3>
+                        <p className="text-muted-foreground">
+                          Aura is the premium currency you earn by leveling up. Spend Aura on rewards and power-ups in
+                          the Rewards shop.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Gift className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Earn 50 Aura every time you level up</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Gift className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Purchase Wildcard Permissions and power-ups</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Gift className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Customize your experience with rewards</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+
+                    {guideActiveTab === "leaderboard" && (
+                      <>
+                        <h3 className="text-xl font-bold text-foreground">Leaderboard</h3>
+                        <p className="text-muted-foreground">
+                          Compete with other players based on your total XP. Climb the ranks to unlock exclusive titles
+                          and recognition.
+                        </p>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
+                            <span>View top players by XP ranking</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Track your position and progress</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
+                            <span>Unlock titles as you level up</span>
+                          </li>
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       {selectedTask && (
         <div

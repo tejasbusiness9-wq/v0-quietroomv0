@@ -50,7 +50,7 @@ export function StreakCounter({ userId }: StreakCounterProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-950/30 rounded-full border border-purple-500/30 hover:bg-purple-900/50 hover:border-purple-400 transition-all cursor-pointer group">
       <video
-        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/streakflame-FCBQ3ysuDB9zXKMKCMNHikg1daPAO2.webm"
+        src="/images/streakflame.webm"
         autoPlay
         loop
         muted

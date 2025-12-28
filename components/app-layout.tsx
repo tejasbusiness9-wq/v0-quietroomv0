@@ -53,6 +53,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     level: number
     display_name: string | null
     username: string | null
+    current_streak: number | null
   } | null>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -74,7 +75,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       if (user) {
         supabase
           .from("profiles")
-          .select("level, display_name, username")
+          .select("level, display_name, username, current_streak")
           .eq("user_id", user.id)
           .maybeSingle()
           .then(({ data }) => {
@@ -92,7 +93,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         supabase
           .from("profiles")
-          .select("level, display_name, username")
+          .select("level, display_name, username, current_streak")
           .eq("user_id", session.user.id)
           .maybeSingle()
           .then(({ data }) => {
@@ -188,6 +189,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     user?.email?.split("@")[0] ||
     "Player"
   const userClass = getLevelInfo(userLevel).name
+  const currentStreak = profile?.current_streak || 0
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, path: "/" },
@@ -473,47 +475,57 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <div className="bg-background border-b border-border px-8 py-4 flex items-center justify-between">
+          <div className="bg-background border-b border-border px-4 md:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* Streak Badge */}
-              <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
-                <span className="text-2xl">🔥</span>
-                <span className="text-sm font-bold text-foreground">{userLevel} days</span>
+              {/* Streak Badge with Video */}
+              <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-6 h-6 md:w-7 md:h-7"
+                  style={{ objectFit: "contain" }}
+                >
+                  <source src="/images/streakflame.webm" type="video/webm" />
+                  <span className="text-2xl">🔥</span>
+                </video>
+                <span className="text-sm font-bold text-foreground">{currentStreak || 0} days</span>
               </div>
             </div>
 
             {/* Right side buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               {/* Bug/Feedback Button */}
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={() => {
-                  console.log("[v0] Bug/Feedback button clicked")
                   window.open("https://wa.me/917219287449", "_blank")
                 }}
-                className="text-foreground hover:text-primary hover:bg-muted/50 gap-2 border border-border"
+                className="text-foreground hover:text-primary hover:bg-primary/10 gap-1.5 md:gap-2 border border-border/50 hover:border-primary/30 transition-all"
               >
                 <Bug className="w-4 h-4" />
-                <span className="text-sm font-medium">Bug/Feedback</span>
+                <span className="hidden sm:inline text-sm font-medium">Bug/Feedback</span>
               </Button>
 
               {/* Guide Button */}
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={() => {
-                  console.log("[v0] Guide button clicked")
                   setShowGuideModal(true)
                 }}
-                className="text-foreground hover:text-primary hover:bg-muted/50 gap-2 border border-border"
+                className="text-foreground hover:text-primary hover:bg-primary/10 gap-1.5 md:gap-2 border border-border/50 hover:border-primary/30 transition-all"
               >
                 <HelpCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">Guide</span>
+                <span className="hidden sm:inline text-sm font-medium">Guide</span>
               </Button>
 
               {/* Profile Section */}
-              <div className="flex items-center gap-3 ml-2 pl-4 border-l border-border">
-                <div className="text-right">
-                  <p className="font-semibold text-foreground">{userName}</p>
+              <div className="flex items-center gap-2 md:gap-3 ml-2 pl-2 md:pl-4 border-l border-border">
+                <div className="text-right hidden md:block">
+                  <p className="font-semibold text-foreground text-sm">{userName}</p>
                   <p className="text-xs text-muted-foreground">
                     Level {userLevel} • {userClass}
                   </p>
@@ -522,10 +534,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <img
                     src={user.user_metadata.avatar_url || "/placeholder.svg"}
                     alt={userName}
-                    className="w-10 h-10 rounded-full"
+                    className="w-9 h-9 md:w-10 md:h-10 rounded-full border-2 border-primary/20"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground">
+                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground text-sm">
                     {userName?.[0]?.toUpperCase() || "U"}
                   </div>
                 )}
