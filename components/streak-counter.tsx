@@ -12,6 +12,8 @@ export function StreakCounter({ userId }: StreakCounterProps) {
   const [loading, setLoading] = useState(true)
   const { refreshTrigger } = useDataRefresh()
 
+  console.log("[v0] StreakCounter rendering with userId:", userId, "streak:", streak, "loading:", loading)
+
   useEffect(() => {
     if (!userId || userId === "") {
       console.log("[v0] No valid userId provided to StreakCounter")
@@ -47,11 +49,14 @@ export function StreakCounter({ userId }: StreakCounterProps) {
             const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
 
             if (diffDays > 1) {
+              console.log("[v0] Streak reset due to inactivity")
               setStreak(0)
             } else {
+              console.log("[v0] Setting streak to:", data?.current_streak)
               setStreak(data?.current_streak || 0)
             }
           } else {
+            console.log("[v0] No last_activity_date, using current_streak:", data?.current_streak)
             setStreak(data?.current_streak || 0)
           }
         }
@@ -66,35 +71,33 @@ export function StreakCounter({ userId }: StreakCounterProps) {
     fetchStreak()
   }, [userId, refreshTrigger])
 
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full border border-orange-500/30">
-        <div className="w-6 h-6 md:w-8 md:h-8 bg-orange-500/50 rounded-full animate-pulse" />
-        <span className="text-sm md:text-base font-bold text-orange-100">—</span>
-      </div>
-    )
-  }
-
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-950/30 rounded-full border border-purple-500/30 hover:bg-purple-900/50 hover:border-purple-400 transition-all cursor-pointer group">
-      <video
-        key={`streak-${streak}`}
-        src="/images/streakflame.webm"
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="w-5 h-5 md:w-6 md:h-6 object-cover brightness-110"
-        onLoadedData={(e) => {
-          const video = e.currentTarget
-          video.play().catch(() => {
-            console.log("[v0] Video autoplay prevented by browser")
-          })
-        }}
-      />
+      <div className="relative w-6 h-6 md:w-8 md:h-8 flex items-center justify-center flex-shrink-0">
+        <video
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/streakflame-ZDDvtlpbagXexgCxy845UGZ5RLFTKe.mp4"
+          autoPlay
+          loop
+          muted
+          defaultMuted
+          playsInline
+          className="w-full h-full object-contain brightness-125 contrast-125"
+          style={{
+            filter: "drop-shadow(0 0 10px rgba(251, 146, 60, 0.7))",
+            minWidth: "24px",
+            minHeight: "24px",
+          }}
+          onLoadedData={() => {
+            console.log("[v0] Flame video loaded successfully")
+          }}
+          onError={(e) => {
+            console.error("[v0] Error loading flame video:", e)
+          }}
+        />
+      </div>
       <div className="flex items-center gap-1">
-        <span className="text-sm md:text-base font-bold text-white">{streak}</span>
-        <span className="hidden md:inline text-xs text-white/70">day{streak !== 1 ? "s" : ""}</span>
+        <span className="text-sm md:text-base font-bold text-white">{loading ? "—" : streak}</span>
+        <span className="text-xs text-white/70">day{streak !== 1 ? "s" : ""}</span>
       </div>
     </div>
   )

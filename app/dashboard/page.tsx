@@ -16,7 +16,6 @@ import RewardsPage from "@/app/rewards/page"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
-import { TaskCreationModal } from "@/components/task-creation-modal"
 import { XpToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { getLevelInfo } from "@/lib/leveling-system"
@@ -31,16 +30,16 @@ import {
   MessageSquare,
   Users,
   LogOut,
-  Plus,
   Calendar,
   X,
   Timer,
   Bug,
   HelpCircle,
 } from "lucide-react"
-import { StreakCounter } from "@/components/streak-counter"
 import { WeeklyXPChart } from "@/components/weekly-xp-chart"
 import { useDataRefresh } from "@/contexts/data-refresh-context" // Import data refresh context
+import { StatPolygon } from "@/components/stat-polygon"
+import { ActivityHeatmap } from "@/components/activity-heatmap"
 
 type PageType =
   | "dashboard"
@@ -114,6 +113,16 @@ export default function DashboardPage() {
 
   const [profileData, setProfileData] = useState<any>(null)
   const [profileStats, setProfileStats] = useState<any>(null)
+  const [polygonStats, setPolygonStats] = useState({
+    focus: 0,
+    consistency: 0,
+    volume: 0,
+    wealth: 0,
+    level: 1,
+  })
+  const [activityData, setActivityData] = useState<{ date: string; count: number }[]>([])
+  const [streak, setStreak] = useState<number | null>(null) // State for streak
+
   const [selectedTask, setSelectedTask] = useState<any | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showGuideModal, setShowGuideModal] = useState(false)
@@ -121,6 +130,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchProfileData()
+    // Fetch polygon stats and activity data on refresh trigger
+    fetchPolygonStats()
+    fetchActivityData()
   }, [refreshTrigger]) // Add refreshTrigger dependency
 
   const fetchProfileData = async () => {
@@ -151,6 +163,8 @@ export default function DashboardPage() {
       .eq("user_id", user.id)
       .maybeSingle()
 
+    setStreak(streakData?.current_streak || null) // Update streak state
+
     setProfileStats({
       goalsCompleted: goalsData?.length || 0,
       tasksFinished: tasksData?.length || 0,
@@ -159,57 +173,80 @@ export default function DashboardPage() {
     })
   }
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null
-
-    timeoutId = setTimeout(() => {
-      if (isLoadingUser) {
-        console.error("[v0] Auth initialization timeout - forcing load")
-        setIsLoadingUser(false)
-      }
-    }, 5000)
-
-    const fetchUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
-
-      if (error) {
-        console.error("[v0] Auth error:", error)
-      }
-
-      setUser(user)
-      setIsLoadingUser(false)
-      clearTimeout(timeoutId)
-
-      if (user) {
-        fetchTodaysTasks(user.id)
-      }
-    }
-
-    fetchUser().catch((error) => {
-      console.error("[v0] Auth fetch failed:", error)
-      setIsLoadingUser(false)
-      clearTimeout(timeoutId)
-    })
-
+  const fetchPolygonStats = async () => {
+    const supabase = getSupabaseBrowserClient()
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchTodaysTasks(session.user.id)
-      }
-    })
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    return () => {
-      subscription.unsubscribe()
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
+    if (!user) return
+
+    // Fetch profile data
+    const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle()
+
+    // Fetch streak data
+    const { data: streak } = await supabase
+      .from("streaks")
+      .select("current_streak")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    // Fetch completed tasks count
+    const { count: completedTasksCount } = await supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("completed", true)
+
+    setPolygonStats({
+      focus: profile?.zen_minutes || 0,
+      consistency: streak?.current_streak || 0,
+      volume: completedTasksCount || 0,
+      wealth: profile?.aura || 0,
+      level: profile?.level || 1,
+    })
+  }
+
+  const fetchActivityData = async () => {
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    // Fetch completed tasks from last 365 days with their completion date and XP
+    const oneYearAgo = new Date()
+    oneYearAgo.setDate(oneYearAgo.getDate() - 365)
+
+    const { data: completedTasks } = await supabase
+      .from("tasks")
+      .select("completed_at, xp")
+      .eq("user_id", user.id)
+      .eq("completed", true)
+      .gte("completed_at", oneYearAgo.toISOString())
+      .order("completed_at", { ascending: false })
+
+    if (completedTasks) {
+      // Group by date and sum XP
+      const activityMap = new Map<string, number>()
+
+      completedTasks.forEach((task) => {
+        if (task.completed_at) {
+          const date = new Date(task.completed_at).toISOString().split("T")[0]
+          const currentXP = activityMap.get(date) || 0
+          activityMap.set(date, currentXP + (task.xp || 0))
+        }
+      })
+
+      const activityArray = Array.from(activityMap.entries()).map(([date, count]) => ({
+        date,
+        count,
+      }))
+
+      setActivityData(activityArray)
     }
-  }, [supabase])
+  }
 
   useEffect(() => {
     const initTasks = async () => {
@@ -309,7 +346,10 @@ export default function DashboardPage() {
     }
 
     await fetchProfileData()
+    // Trigger refresh for polygon stats and activity data as well
     triggerRefresh() // Trigger global refresh after task completion
+    fetchPolygonStats()
+    fetchActivityData()
   }
 
   const handleSignOut = async () => {
@@ -341,134 +381,40 @@ export default function DashboardPage() {
 
             <StatsSection />
             <WeeklyXPChart />
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-foreground">Today's Quests</h3>
-                <button
-                  onClick={() => setIsTaskModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
-                >
-                  <Plus className="w-5 h-5" /> New Task
-                </button>
+
+            <div className="space-y-6">
+              {/* Ability Hexagon */}
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h3 className="text-xs font-bold text-gray-400 tracking-widest mb-4">ABILITY HEXAGON</h3>
+                <StatPolygon stats={polygonStats} />
+
+                {/* Stats Grid Below Polygon */}
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+                    <p className="text-[10px] text-gray-400 font-mono tracking-wider mb-1">ZEN MINUTES</p>
+                    <p className="text-lg font-bold text-blue-400">{polygonStats.focus}m</p>
+                  </div>
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+                    <p className="text-[10px] text-gray-400 font-mono tracking-wider mb-1">STREAK</p>
+                    <p className="text-lg font-bold text-orange-400">{polygonStats.consistency} Days</p>
+                  </div>
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+                    <p className="text-[10px] text-gray-400 font-mono tracking-wider mb-1">WEALTH</p>
+                    <p className="text-lg font-bold text-yellow-400">{polygonStats.wealth} Aura</p>
+                  </div>
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+                    <p className="text-[10px] text-gray-400 font-mono tracking-wider mb-1">CLEARED</p>
+                    <p className="text-lg font-bold text-pink-400">{polygonStats.volume} Tasks</p>
+                  </div>
+                </div>
               </div>
-              {loadingTasks ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Zap className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
-                  <p>Loading your quests...</p>
-                </div>
-              ) : tasks.length === 0 ? (
-                <div className="text-center py-16 space-y-4">
-                  <div className="relative inline-block">
-                    <Calendar className="w-20 h-20 text-muted-foreground/30 animate-bounce" />
-                    <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full animate-pulse" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-semibold text-foreground mb-2">No quests for today</h4>
-                    <p className="text-muted-foreground mb-4">Create your first task and start earning XP!</p>
-                    <button
-                      onClick={() => setIsTaskModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all hover:scale-105 font-semibold"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Create Your First Quest
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => setSelectedTask(task)}
-                      className={`bg-card border border-border rounded-xl p-4 transition-all hover:border-primary/50 cursor-pointer ${
-                        task.completed ? "opacity-50" : ""
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={(e) => {
-                              e.stopPropagation()
-                              toggleComplete(task.id, task.completed)
-                            }}
-                            className="w-5 h-5 mt-1 rounded border-border cursor-pointer accent-primary flex-shrink-0"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3
-                            className={`font-semibold text-foreground mb-2 break-words ${
-                              task.completed ? "line-through" : ""
-                            }`}
-                          >
-                            {task.title.length > 30 ? `${task.title.slice(0, 30)}...` : task.title}
-                          </h3>
-                          {task.description && (
-                            <p className="text-sm text-muted-foreground mb-2 break-words">
-                              {task.description.length > 30 ? `${task.description.slice(0, 30)}...` : task.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span
-                              className={`px-2 py-1 text-xs font-semibold rounded-full border ${
-                                task.priority === "high" || task.priority === "urgent"
-                                  ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                  : task.priority === "medium"
-                                    ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                                    : "bg-green-500/20 text-green-400 border-green-500/30"
-                              }`}
-                            >
-                              {task.priority}
-                            </span>
-                            <span className="relative px-3 py-1.5 text-sm font-bold bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-white rounded-full shadow-lg shadow-yellow-500/50 flex items-center gap-1 overflow-hidden">
-                              <span
-                                className="absolute inset-0 rounded-full border-2 border-transparent animate-snake-border"
-                                style={{
-                                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)",
-                                  backgroundSize: "200% 100%",
-                                }}
-                              ></span>
-                              <Zap className="w-4 h-4 relative z-10" />
-                              <span className="relative z-10">+{task.xp || 3} XP</span>
-                            </span>
-                            {task.category && (
-                              <span className="px-2 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-full font-semibold flex items-center gap-1 border border-emerald-500/30 shadow-sm">
-                                <Zap className="w-3 h-3" />#{task.category}
-                              </span>
-                            )}
-                            {task.goal_id && (
-                              <span className="px-2 py-1 text-xs bg-primary/20 text-primary rounded-full flex items-center gap-1">
-                                <Target className="w-3 h-3" />
-                                Linked to goal
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {!task.completed && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setZenModeTaskId(task.id)
-                              setCurrentPage("zen-mode")
-                            }}
-                            className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
-                          >
-                            <Zap className="w-4 h-4" />
-                            Focus Now
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+
+              {/* Activity Heatmap */}
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h3 className="text-xs font-bold text-gray-400 tracking-widest mb-4">ACTIVITY HEATMAP</h3>
+                <ActivityHeatmap data={activityData} />
+              </div>
             </div>
-            <TaskCreationModal
-              isOpen={isTaskModalOpen}
-              onClose={() => setIsTaskModalOpen(false)}
-              onCreateTask={handleCreateTask}
-            />
           </>
         )
       case "goals":
@@ -754,7 +700,28 @@ export default function DashboardPage() {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              {user && <StreakCounter userId={user.id} />}
+
+              {console.log("[v0] Header - user:", !!user, "streak:", streak)}
+              {user && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    defaultMuted
+                    playsInline
+                    className="w-5 h-5 md:w-6 md:h-6 object-contain brightness-125 contrast-125"
+                    style={{ minWidth: "20px", minHeight: "20px" }}
+                    onLoadedData={() => console.log("[v0] Flame video loaded successfully")}
+                    onError={(e) => console.error("[v0] Flame video error:", e)}
+                  >
+                    <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/streakflame-ZDDvtlpbagXexgCxy845UGZ5RLFTKe.mp4" type="video/mp4" />
+                  </video>
+                  <span className="text-sm font-semibold text-primary">
+                    {streak || 0} {streak === 1 ? "day" : "days"}
+                  </span>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 md:gap-3">
               <button
