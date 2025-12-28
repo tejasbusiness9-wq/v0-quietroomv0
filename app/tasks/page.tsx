@@ -137,15 +137,20 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     const now = new Date()
 
     if (newTask.when === "today") {
+      // For tasks created today, deadline is 11:59:59 PM today
       const endOfToday = new Date(now)
       endOfToday.setHours(23, 59, 59, 999)
       dueDate = endOfToday.toISOString()
     } else if (newTask.when === "this-week") {
-      const endOfWeek = new Date(now)
-      const dayOfWeek = endOfWeek.getDay() // 0 (Sun) - 6 (Sat)
-      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+      // Smart logic: If today is Sunday, "This Week" means NEXT Sunday (7 days away)
+      // If today is Mon-Sat, "This Week" means the upcoming Sunday
+      const today = new Date(now)
+      const currentDay = today.getDay() // 0 = Sunday, 1 = Monday, ... 6 = Saturday
 
-      endOfWeek.setDate(now.getDate() + daysUntilSunday)
+      const daysUntilSunday = currentDay === 0 ? 7 : 7 - currentDay
+
+      const endOfWeek = new Date(today)
+      endOfWeek.setDate(today.getDate() + daysUntilSunday)
       endOfWeek.setHours(23, 59, 59, 999)
       dueDate = endOfWeek.toISOString()
     }
@@ -212,7 +217,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     } else if (updatedTask.when === "this-week") {
       const endOfWeek = new Date(now)
       const dayOfWeek = endOfWeek.getDay()
-      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek
+      const daysUntilSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek
 
       endOfWeek.setDate(now.getDate() + daysUntilSunday)
       endOfWeek.setHours(23, 59, 59, 999)
