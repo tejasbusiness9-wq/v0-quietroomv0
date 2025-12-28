@@ -754,7 +754,7 @@ export default function DashboardPage() {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <StreakCounter userId={user?.id || ""} />
+              {user && <StreakCounter userId={user.id} />}
             </div>
             <div className="flex items-center gap-2 md:gap-3">
               <button

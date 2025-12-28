@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, Calendar, Target, Zap, X, MoreVertical, Edit2, Trash2, AlertTriangle } from "lucide-react"
+import { Plus, Calendar, Target, Zap, X, MoreVertical, Edit2, Trash2, AlertTriangle, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TaskCreationModal } from "@/components/task-creation-modal"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
@@ -36,6 +36,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const { refreshTrigger, triggerRefresh } = useDataRefresh()
   const [activeTab, setActiveTab] = useState<"active" | "overdue">("active")
+  const [timeRemaining, setTimeRemaining] = useState<string>("")
 
   useEffect(() => {
     fetchTasks()
@@ -270,9 +271,17 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   const isThisWeek = (dueDate?: string) => {
     if (!dueDate) return false
     const today = new Date()
-    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0) // Start of tomorrow
+
+    const nextSunday = new Date(today)
+    const daysUntilSunday = today.getDay() === 0 ? 7 : 7 - today.getDay()
+    nextSunday.setDate(today.getDate() + daysUntilSunday)
+    nextSunday.setHours(23, 59, 59, 999) // End of next Sunday
+
     const due = new Date(dueDate)
-    return due > today && due <= weekFromNow
+    return due >= tomorrow && due <= nextSunday
   }
 
   const checkAndResetStreakForOverdueTasks = async () => {
@@ -446,6 +455,39 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
     if (text.length <= limit) return text
     return text.substring(0, limit) + "..."
   }
+
+  useEffect(() => {
+    if (!selectedTask?.due_date) return
+
+    const updateTimer = () => {
+      const now = new Date().getTime()
+      const deadline = new Date(selectedTask.due_date!).getTime()
+      const distance = deadline - now
+
+      if (distance < 0) {
+        setTimeRemaining("Overdue")
+        return
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000)
+
+      if (days > 0) {
+        setTimeRemaining(`${days}d ${hours}h ${minutes}m`)
+      } else if (hours > 0) {
+        setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`)
+      } else {
+        setTimeRemaining(`${minutes}m ${seconds}s`)
+      }
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+
+    return () => clearInterval(interval)
+  }, [selectedTask?.due_date])
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -658,6 +700,22 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
                 <div className="flex items-center gap-2 text-sm md:text-base text-muted-foreground">
                   <Calendar className="w-4 h-4 md:w-5 md:h-5" />
                   Due: {new Date(selectedTask.due_date).toLocaleDateString()}
+                </div>
+              )}
+
+              {selectedTask.due_date && !selectedTask.completed && (
+                <div
+                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${
+                    timeRemaining === "Overdue"
+                      ? "bg-red-500/10 border-red-500/30 text-red-400"
+                      : "bg-primary/10 border-primary/30 text-primary"
+                  }`}
+                >
+                  <Clock className="w-5 h-5" />
+                  <div className="flex flex-col">
+                    <span className="text-xs opacity-70">Time Remaining</span>
+                    <span className="font-bold text-lg">{timeRemaining}</span>
+                  </div>
                 </div>
               )}
 

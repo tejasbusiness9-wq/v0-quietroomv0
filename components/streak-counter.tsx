@@ -13,6 +13,12 @@ export function StreakCounter({ userId }: StreakCounterProps) {
   const { refreshTrigger } = useDataRefresh()
 
   useEffect(() => {
+    if (!userId || userId === "") {
+      console.log("[v0] No valid userId provided to StreakCounter")
+      setLoading(false)
+      return
+    }
+
     async function fetchStreak() {
       try {
         const { createBrowserClient } = await import("@supabase/ssr")
@@ -23,25 +29,23 @@ export function StreakCounter({ userId }: StreakCounterProps) {
 
         const { data, error } = await supabase
           .from("streaks")
-          .select("current_streak, last_completed_date")
+          .select("current_streak, last_activity_date")
           .eq("user_id", userId)
           .single()
 
         if (error) {
-          console.error("[v0] Error fetching streak:", error)
+          console.error("[v0] Error fetching streak:", error.message)
           setStreak(0)
         } else {
-          // Check if streak should be reset based on last_completed_date
           const today = new Date()
           today.setHours(0, 0, 0, 0)
 
-          if (data?.last_completed_date) {
-            const lastDate = new Date(data.last_completed_date)
+          if (data?.last_activity_date) {
+            const lastDate = new Date(data.last_activity_date)
             lastDate.setHours(0, 0, 0, 0)
 
             const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
 
-            // If more than 1 day has passed, streak should be 0
             if (diffDays > 1) {
               setStreak(0)
             } else {
@@ -74,15 +78,14 @@ export function StreakCounter({ userId }: StreakCounterProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-950/30 rounded-full border border-purple-500/30 hover:bg-purple-900/50 hover:border-purple-400 transition-all cursor-pointer group">
       <video
-        key={streak}
+        key={`streak-${streak}`}
         src="/images/streakflame.webm"
         autoPlay
         loop
         muted
         playsInline
-        className="w-10 h-10 md:w-14 md:h-14 object-cover -my-3"
+        className="w-5 h-5 md:w-6 md:h-6 object-cover brightness-110"
         onLoadedData={(e) => {
-          // Force play if autoplay doesn't work
           const video = e.currentTarget
           video.play().catch(() => {
             console.log("[v0] Video autoplay prevented by browser")
@@ -90,8 +93,8 @@ export function StreakCounter({ userId }: StreakCounterProps) {
         }}
       />
       <div className="flex items-center gap-1">
-        <span className="text-sm md:text-base font-bold text-orange-100">{streak}</span>
-        <span className="hidden md:inline text-xs text-orange-200/80">day{streak !== 1 ? "s" : ""}</span>
+        <span className="text-sm md:text-base font-bold text-white">{streak}</span>
+        <span className="hidden md:inline text-xs text-white/70">day{streak !== 1 ? "s" : ""}</span>
       </div>
     </div>
   )
