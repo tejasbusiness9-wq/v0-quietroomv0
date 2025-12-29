@@ -94,6 +94,7 @@ export default function DashboardPage() {
       if (!user) {
         router.push("/")
       } else {
+        setUser(user)
         setIsLoadingUser(false)
       }
     }
@@ -701,7 +702,6 @@ export default function DashboardPage() {
                 <Menu className="w-5 h-5" />
               </button>
 
-              {console.log("[v0] Header - user:", !!user, "streak:", streak)}
               {user && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                   <video
@@ -710,10 +710,13 @@ export default function DashboardPage() {
                     muted
                     defaultMuted
                     playsInline
-                    className="w-5 h-5 md:w-6 md:h-6 object-contain brightness-125 contrast-125"
+                    className="w-5 h-5 md:w-10 md:h-10 object-contain brightness-125 contrast-125"
                     style={{ minWidth: "20px", minHeight: "20px" }}
                     onLoadedData={() => console.log("[v0] Flame video loaded successfully")}
-                    onError={(e) => console.error("[v0] Flame video error:", e)}
+                    onError={(e) => {
+                                                const err = e.currentTarget.error
+  console.error("Video Error Code:", err ? err.code : "Unknown", err)
+}}
                   >
                     <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/streakflame-ZDDvtlpbagXexgCxy845UGZ5RLFTKe.mp4" type="video/mp4" />
                   </video>

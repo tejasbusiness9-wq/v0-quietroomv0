@@ -72,7 +72,7 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-balance">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-gray-400">
             Level Up Your Life,
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-primary">

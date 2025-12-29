@@ -81,11 +81,9 @@ export function StreakCounter({ userId }: StreakCounterProps) {
           muted
           defaultMuted
           playsInline
-          className="w-full h-full object-contain brightness-125 contrast-125"
+          className="w-8 h-8 md:w-10 md:h-10 object-contain brightness-125 contrast-125"
           style={{
             filter: "drop-shadow(0 0 10px rgba(251, 146, 60, 0.7))",
-            minWidth: "24px",
-            minHeight: "24px",
           }}
           onLoadedData={() => {
             console.log("[v0] Flame video loaded successfully")
