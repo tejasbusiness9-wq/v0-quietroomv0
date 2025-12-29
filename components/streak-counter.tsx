@@ -12,11 +12,8 @@ export function StreakCounter({ userId }: StreakCounterProps) {
   const [loading, setLoading] = useState(true)
   const { refreshTrigger } = useDataRefresh()
 
-  console.log("[v0] StreakCounter rendering with userId:", userId, "streak:", streak, "loading:", loading)
-
   useEffect(() => {
     if (!userId || userId === "") {
-      console.log("[v0] No valid userId provided to StreakCounter")
       setLoading(false)
       return
     }
@@ -36,7 +33,6 @@ export function StreakCounter({ userId }: StreakCounterProps) {
           .single()
 
         if (error) {
-          console.error("[v0] Error fetching streak:", error.message)
           setStreak(0)
         } else {
           const today = new Date()
@@ -49,19 +45,16 @@ export function StreakCounter({ userId }: StreakCounterProps) {
             const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
 
             if (diffDays > 1) {
-              console.log("[v0] Streak reset due to inactivity")
               setStreak(0)
             } else {
-              console.log("[v0] Setting streak to:", data?.current_streak)
               setStreak(data?.current_streak || 0)
             }
           } else {
-            console.log("[v0] No last_activity_date, using current_streak:", data?.current_streak)
             setStreak(data?.current_streak || 0)
           }
         }
       } catch (error) {
-        console.error("[v0] Error loading streak data:", error)
+        console.error("Error loading streak data:", error)
         setStreak(0)
       } finally {
         setLoading(false)
@@ -71,31 +64,19 @@ export function StreakCounter({ userId }: StreakCounterProps) {
     fetchStreak()
   }, [userId, refreshTrigger])
 
-  return (
+   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-950/30 rounded-full border border-purple-500/30 hover:bg-purple-900/50 hover:border-purple-400 transition-all cursor-pointer group">
-      <div className="relative w-6 h-6 md:w-8 md:h-8 flex items-center justify-center flex-shrink-0">
-        <video
+      <video
         src="/images/streakflame.webm"
-          autoPlay
-          loop
-          muted
-          defaultMuted
-          playsInline
-          className="w-8 h-8 md:w-10 md:h-10 object-contain brightness-125 contrast-125"
-          style={{
-            filter: "drop-shadow(0 0 10px rgba(251, 146, 60, 0.7))",
-          }}
-          onLoadedData={() => {
-            console.log("[v0] Flame video loaded successfully")
-          }}
-          onError={(e) => {
-            console.error("[v0] Error loading flame video:", e)
-          }}
-        />
-      </div>
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="w-10 h-10 md:w-14 md:h-14 object-cover -my-3"
+      />
       <div className="flex items-center gap-1">
-        <span className="text-sm md:text-base font-bold text-white">{loading ? "—" : streak}</span>
-        <span className="text-xs text-white/70">day{streak !== 1 ? "s" : ""}</span>
+        <span className="text-sm md:text-base font-bold text-orange-100">{streak}</span>
+        <span className="hidden md:inline text-xs text-orange-200/80">day{streak !== 1 ? "s" : ""}</span>
       </div>
     </div>
   )
