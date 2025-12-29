@@ -40,6 +40,7 @@ import { WeeklyXPChart } from "@/components/weekly-xp-chart"
 import { useDataRefresh } from "@/contexts/data-refresh-context" // Import data refresh context
 import { StatPolygon } from "@/components/stat-polygon"
 import { ActivityHeatmap } from "@/components/activity-heatmap"
+import { StreakDisplay } from "@/components/streak-display" // Import StreakDisplay component
 
 type PageType =
   | "dashboard"
@@ -702,29 +703,7 @@ export default function DashboardPage() {
                 <Menu className="w-5 h-5" />
               </button>
 
-              {user && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    defaultMuted
-                    playsInline
-                    className="w-5 h-5 md:w-10 md:h-10 object-contain brightness-125 contrast-125"
-                    style={{ minWidth: "20px", minHeight: "20px" }}
-                    onLoadedData={() => console.log("[v0] Flame video loaded successfully")}
-                    onError={(e) => {
-                                                const err = e.currentTarget.error
-  console.error("Video Error Code:", err ? err.code : "Unknown", err)
-}}
-                  >
-                    <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/streakflame-ZDDvtlpbagXexgCxy845UGZ5RLFTKe.mp4" type="video/mp4" />
-                  </video>
-                  <span className="text-sm font-semibold text-primary">
-                    {streak || 0} {streak === 1 ? "day" : "days"}
-                  </span>
-                </div>
-              )}
+              {user && <StreakDisplay userId={user.id} />}
             </div>
             <div className="flex items-center gap-2 md:gap-3">
               <button
