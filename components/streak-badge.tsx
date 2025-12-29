@@ -28,16 +28,15 @@ export function StreakBadge({ userId }: StreakBadgeProps) {
   }, [userId, supabase])
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-900/20 border border-purple-500/30">
-      {/* Flame icon container with animation */}
-      <div className="relative w-5 h-5 md:w-12 md:h-12 flex items-center justify-center">
+    <div className="relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-900/20 border border-purple-500/30 animate-streak-border overflow-visible">
+      {/* Flame icon container with fixed size */}
+      <div className="relative w-6 h-6 flex-shrink-0 flex items-center justify-center overflow-visible">
         <Image
           src="/images/flame-icon.png"
           alt="Streak flame"
-          width={24}
-          height={24}
-          className="w-full h-full object-contain"
-          
+          width={64}
+          height={64}
+          className="absolute w-16 h-16 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 object-contain animate-flame-float drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]"
         />
       </div>
 

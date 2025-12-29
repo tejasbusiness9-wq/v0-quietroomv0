@@ -226,6 +226,27 @@
     }
   }
 
+  .animate-flame-float {
+    animation: flame-float 2s ease-in-out infinite;
+  }
+
+  /* Adding streak badge border animation with gradient pulse */
+  @keyframes streak-border {
+    0%,
+    100% {
+      border-color: rgba(168, 85, 247, 0.3);
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
+    }
+    50% {
+      border-color: rgba(168, 85, 247, 0.6);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
+    }
+  }
+
+  .animate-streak-border {
+    animation: streak-border 2s ease-in-out infinite;
+  }
+
   /* Adding pulse animation for flame glow effect */
   @keyframes flame-pulse {
     0%,
@@ -395,7 +416,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: rgb(168, 85, 247);
+    background: rgb(168 85 247);
     cursor: pointer;
     border: none;
     box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
