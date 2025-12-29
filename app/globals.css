@@ -215,6 +215,30 @@
     animation: blob 7s infinite;
   }
 
+  /* Adding separate flame float animation that gently moves up and down */
+  @keyframes flame-float {
+    0%,
+    100% {
+      transform: translateY(0px) scale(1);
+    }
+    50% {
+      transform: translateY(-4px) scale(1.05);
+    }
+  }
+
+  /* Adding pulse animation for flame glow effect */
+  @keyframes flame-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6));
+    }
+    50% {
+      opacity: 0.85;
+      filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.8));
+    }
+  }
+
   @keyframes float {
     0%,
     100% {
