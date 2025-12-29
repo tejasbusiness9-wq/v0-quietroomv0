@@ -64,16 +64,31 @@ export function StreakCounter({ userId }: StreakCounterProps) {
     fetchStreak()
   }, [userId, refreshTrigger])
 
-   return (
+  return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-950/30 rounded-full border border-purple-500/30 hover:bg-purple-900/50 hover:border-purple-400 transition-all cursor-pointer group">
-      <video
-        src="/images/streakflame.webm"
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="w-10 h-10 md:w-14 md:h-14 object-cover -my-3"
-      />
+      <div className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center">
+  {/* OPTIONAL: Glow behind the flame */}
+  <div className="absolute inset-0 bg-orange-500/40 blur-lg rounded-full animate-pulse" />
+
+  <video
+    src="/images/Flameanimation.webm"
+    autoPlay
+    loop
+    muted
+    defaultMuted
+    playsInline
+    // 1. Scale and Position
+    className="w-[150%] h-[150%] object-cover -mt-1" 
+    style={{
+      // 2. BLEND MODE: Hides the black background
+      mixBlendMode: "screen",
+      
+      // 3. THE MASK: Forces the video into a circle shape (Webkit is for Chrome/Safari)
+      maskImage: "radial-gradient(circle, black 60%, transparent 70%)",
+      WebkitMaskImage: "radial-gradient(circle, black 60%, transparent 70%)"
+    }}
+  />
+</div>
       <div className="flex items-center gap-1">
         <span className="text-sm md:text-base font-bold text-orange-100">{streak}</span>
         <span className="hidden md:inline text-xs text-orange-200/80">day{streak !== 1 ? "s" : ""}</span>
