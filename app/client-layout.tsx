@@ -16,6 +16,7 @@ export default function ClientLayout({
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
+        <div className="fixed inset-0 bg-background -z-10" />
         <DataRefreshProvider>{children}</DataRefreshProvider>
         <Analytics />
       </body>

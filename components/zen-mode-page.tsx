@@ -233,7 +233,6 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       .select("*")
       .order("created_at", { ascending: true })
 
-    // Get user's purchased environments from rewards_items through inventory
     const { data: inventory } = await supabase
       .from("inventory")
       .select("item_type, is_used")
@@ -264,14 +263,20 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       })) || []
 
     const mappedPurchasedEnvs =
-      purchasedEnvs?.map((env) => ({
-        id: env.id,
-        name: env.name,
-        description: env.description || "",
-        background_value: env.media_url || "",
-        file_type: env.media_type === "video" ? "mp4" : env.media_type === "image" ? "jpg" : "gif",
-        media_type: env.media_type === "video" ? "animated" : env.media_type === "gif" ? "animated" : "static",
-      })) || []
+      purchasedEnvs?.map((env) => {
+        const fileExtension = env.media_url?.split(".").pop()?.toLowerCase() || ""
+        const isAnimated = ["gif", "mp4", "webm"].includes(fileExtension)
+        const isStatic = ["png", "jpg", "jpeg"].includes(fileExtension)
+
+        return {
+          id: env.id,
+          name: env.name,
+          description: env.description || "",
+          background_value: env.media_url || "",
+          file_type: fileExtension,
+          media_type: isAnimated ? "animated" : isStatic ? "static" : "animated",
+        }
+      }) || []
 
     const allEnvironments = [...mappedSystemEnvs, ...mappedPurchasedEnvs]
     setEnvironments(allEnvironments)
@@ -974,7 +979,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
                         onClick={() => handleEnvironmentClick(env)}
                       >
                         <div className="aspect-video relative overflow-hidden bg-muted">
-                          {env.file_type === "mp4" ? (
+                          {env.file_type === "mp4" || env.file_type === "webm" ? (
                             <video
                               src={env.background_value}
                               className="w-full h-full object-cover"
@@ -1002,8 +1007,9 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
                             </div>
                           )}
                         </div>
-                        <div className="p-2">
-                          <p className="text-xs font-medium text-foreground text-center truncate">{env.name}</p>
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm mb-1 text-foreground">{env.name}</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{env.description}</p>
                         </div>
                       </Card>
                     ))}
@@ -1063,7 +1069,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
         isMounted &&
         createPortal(
           <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center">
-            {activeEnvironment?.file_type === "mp4" ? (
+            {activeEnvironment?.file_type === "mp4" || activeEnvironment?.file_type === "webm" ? (
               <video
                 autoPlay
                 loop

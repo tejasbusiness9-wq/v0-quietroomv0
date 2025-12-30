@@ -475,6 +475,7 @@ export default function RewardsPage() {
               {systemItems.map((item) => {
                 const Icon = getIconComponent(item.icon_name)
                 const hasVideoError = videoErrors.has(item.name)
+                const isPurchased = inventoryItems.some((inv) => inv.item_type === item.id)
 
                 return (
                   <div
@@ -482,6 +483,13 @@ export default function RewardsPage() {
                     className="group relative bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-md border border-cyan-500/30 rounded-xl overflow-hidden hover:border-cyan-400/50 transition-all hover:scale-105"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    {isPurchased && (
+                      <div className="absolute top-3 right-3 z-10 px-3 py-1 bg-green-500/90 backdrop-blur-sm rounded-full text-xs font-bold text-white flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        PURCHASED
+                      </div>
+                    )}
 
                     {/* Media Preview */}
                     {item.media_url && (
@@ -712,11 +720,30 @@ export default function RewardsPage() {
                               className="w-full h-full object-cover"
                               onError={(e) => handleVideoError(rewardItem.name, rewardItem.media_url!, e)}
                             />
+                          ) : rewardItem.media_type === "audio" || hasVideoError ? (
+                            <div className="flex items-center justify-center h-full bg-gradient-to-br from-cyan-900/50 to-purple-900/50">
+                              <Icon className="w-12 h-12 text-cyan-400" />
+                            </div>
+                          ) : rewardItem.media_type === "image" || rewardItem.media_url ? (
+                            <img
+                              src={rewardItem.media_url || "/placeholder.svg"}
+                              alt={rewardItem.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                                const iconContainer = e.currentTarget.parentElement?.querySelector(".fallback-icon")
+                                if (iconContainer) iconContainer.classList.remove("hidden")
+                              }}
+                            />
                           ) : (
                             <div className="flex items-center justify-center h-full bg-gradient-to-br from-cyan-900/50 to-purple-900/50">
                               <Icon className="w-12 h-12 text-cyan-400" />
                             </div>
                           )}
+                          {/* Fallback icon if image fails to load */}
+                          <div className="fallback-icon hidden absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-900/50 to-purple-900/50">
+                            <Icon className="w-12 h-12 text-cyan-400" />
+                          </div>
                         </div>
                       )}
 
