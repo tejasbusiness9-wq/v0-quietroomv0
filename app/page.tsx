@@ -429,7 +429,7 @@ export default function LandingPage() {
             {/* Brand Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10  rounded-lg flex items-center justify-center">
                   <img src="/ui/new-logo.png" alt="Quiet Room" className="w-10 h-10 object-contain" />
                 </div>
                 <span className="text-xl font-bold text-foreground tracking-wider">QUIET ROOM</span>

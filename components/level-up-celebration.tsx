@@ -4,6 +4,7 @@ import { Sparkles, Zap, Trophy, Star, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { getLevelInfo } from "@/lib/leveling-system"
 import Confetti from "react-confetti"
+import { SoundEffects } from "@/lib/sound-effects"
 
 interface LevelUpCelebrationProps {
   newLevel: number
@@ -16,6 +17,8 @@ export function LevelUpCelebration({ newLevel, onClose }: LevelUpCelebrationProp
   const levelInfo = getLevelInfo(newLevel)
 
   useEffect(() => {
+    SoundEffects.levelUp()
+
     setWindowSize({
       width: window.innerWidth,
       height: window.innerHeight,

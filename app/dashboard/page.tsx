@@ -41,6 +41,7 @@ import { useDataRefresh } from "@/contexts/data-refresh-context" // Import data 
 import { StatPolygon } from "@/components/stat-polygon"
 import { ActivityHeatmap } from "@/components/activity-heatmap"
 import { StreakDisplay } from "@/components/streak-display" // Import StreakDisplay component
+import { SoundEffects } from "@/lib/sound-effects" // Added sound effects import
 
 type PageType =
   | "dashboard"
@@ -334,6 +335,8 @@ export default function DashboardPage() {
         .maybeSingle()
 
       if (profile) {
+        SoundEffects.xpGain()
+
         setXpToastData({
           xp: 3,
           message: "Task completed!",
@@ -693,6 +696,7 @@ export default function DashboardPage() {
         )}
 
         <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="fixed inset-0 bg-background pointer-events-none -z-10" />
           <div className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 border-b border-border bg-card">
             <div className="flex items-center gap-2 md:gap-4">
               <button

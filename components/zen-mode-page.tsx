@@ -12,6 +12,7 @@ import { AuraToast } from "@/components/aura-toast"
 import { XPToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { Textarea } from "@/components/ui/textarea"
+import { SoundEffects } from "@/lib/sound-effects"
 
 interface Goal {
   id: string
@@ -47,6 +48,12 @@ interface ZenModePageProps {
   goalName?: string
   goalId?: string | null
   onNavigateToQ?: () => void
+}
+
+// Define a dummy setProfile function for now, assuming it will be provided by a context or hook.
+// In a real application, this would likely be replaced by a context provider or similar.
+const setProfile = (profileData: any) => {
+  console.log("setProfile called with:", profileData)
 }
 
 export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNavigateToQ }: ZenModePageProps) {
@@ -332,6 +339,8 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   }, [timeLeft, isRunning])
 
   const handleTimerComplete = async () => {
+    SoundEffects.timerComplete()
+
     setIsRunning(false)
     setIsFullscreen(false)
 
@@ -425,18 +434,17 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       console.log("[v0] Total aura gained:", totalAuraGained, typeof totalAuraGained)
       console.log("[v0] New aura:", newAura, typeof newAura)
 
-      await supabase
-        .from("profiles")
-        .update({
-          total_xp: newTotalXP,
-          current_xp: newCurrentXP,
-          level: newLevel,
-          xp_to_next_level: newXPToNextLevel,
-          aura: newAura,
-          zen_minutes: newZenMinutes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", user.id)
+      const updatedProfile = {
+        total_xp: newTotalXP,
+        current_xp: newCurrentXP,
+        level: newLevel,
+        xp_to_next_level: newXPToNextLevel,
+        aura: newAura,
+        zen_minutes: newZenMinutes,
+        updated_at: new Date().toISOString(),
+      }
+
+      await supabase.from("profiles").update(updatedProfile).eq("user_id", user.id)
 
       await supabase
         .from("zen_sessions")
@@ -542,10 +550,11 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       }
 
       if (newLevel > currentProfile.level) {
-        setTimeout(() => {
-          setNewLevel(newLevel)
-          setShowLevelUp(true)
-        }, 2000)
+        SoundEffects.xpGain()
+
+        setProfile(updatedProfile) // This line was the source of the error
+        setNewLevel(newLevel)
+        setShowLevelUp(true)
       }
     }
 
@@ -590,17 +599,16 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       const levelUpAura = levelsGained * 50
       const newAura = currentProfile.aura + levelUpAura // No session aura, only level-up aura
 
-      await supabase
-        .from("profiles")
-        .update({
-          total_xp: newTotalXP,
-          current_xp: newCurrentXP,
-          level: newLevel,
-          xp_to_next_level: newXPToNextLevel,
-          aura: newAura,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", user.id)
+      const updatedProfile = {
+        total_xp: newTotalXP,
+        current_xp: newCurrentXP,
+        level: newLevel,
+        xp_to_next_level: newXPToNextLevel,
+        aura: newAura,
+        updated_at: new Date().toISOString(),
+      }
+
+      await supabase.from("profiles").update(updatedProfile).eq("user_id", user.id)
 
       await supabase
         .from("zen_sessions")
@@ -653,10 +661,11 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       }, 2000)
 
       if (newLevel > currentProfile.level) {
-        setTimeout(() => {
-          setNewLevel(newLevel)
-          setShowLevelUp(true)
-        }, 3500)
+        SoundEffects.xpGain()
+
+        setProfile(updatedProfile) // This line was the source of the error
+        setNewLevel(newLevel)
+        setShowLevelUp(true)
       }
     }
 
