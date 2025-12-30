@@ -390,7 +390,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
     const { data: currentProfile } = await supabase
       .from("profiles")
-      .select("total_xp, current_xp, level, xp_to_next_level, aura")
+      .select("total_xp, current_xp, level, xp_to_next_level, aura, zen_minutes")
       .eq("user_id", user.id)
       .maybeSingle()
 
@@ -400,6 +400,8 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
       const currentCurrentXP = Number(currentProfile.current_xp) || 0
       const currentLevel = Number(currentProfile.level) || 1
       const currentXPToNextLevel = Number(currentProfile.xp_to_next_level) || 150
+      const currentZenMinutes = Number(currentProfile.zen_minutes) || 0
+      const newZenMinutes = currentZenMinutes + sessionData.minutes
 
       const newTotalXP = currentTotalXP + xpEarned
       let newCurrentXP = currentCurrentXP + xpEarned
@@ -431,6 +433,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
           level: newLevel,
           xp_to_next_level: newXPToNextLevel,
           aura: newAura,
+          zen_minutes: newZenMinutes,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id)
