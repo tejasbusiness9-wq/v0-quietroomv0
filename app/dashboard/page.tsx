@@ -131,6 +131,27 @@ export default function DashboardPage() {
   const [showGuideModal, setShowGuideModal] = useState(false)
   const [guideActiveTab, setGuideActiveTab] = useState("overview")
 
+  const fetchTodaysTasks = async (userId: string) => {
+    setLoadingTasks(true)
+    const today = new Date().toISOString().split("T")[0]
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .gte("due_date", today)
+      .lte("due_date", today + "T23:59:59")
+      .order("created_at", { ascending: false })
+
+    if (!error && data) {
+      setTasks(data)
+    }
+    setLoadingTasks(false)
+  }
+
+  const setTodaysTasks = setTasks // Alias for optimistic UI update
+
   useEffect(() => {
     fetchProfileData()
     // Fetch polygon stats and activity data on refresh trigger
@@ -264,25 +285,6 @@ export default function DashboardPage() {
     initTasks()
   }, [refreshTrigger]) // Add refreshTrigger dependency
 
-  const fetchTodaysTasks = async (userId: string) => {
-    setLoadingTasks(true)
-    const today = new Date().toISOString().split("T")[0]
-
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .gte("due_date", today)
-      .lte("due_date", today + "T23:59:59")
-      .order("created_at", { ascending: false })
-
-    if (!error && data) {
-      setTasks(data)
-    }
-    setLoadingTasks(false)
-  }
-
   const handleCreateTask = async (newTask: any) => {
     if (!user) return
 
@@ -318,6 +320,10 @@ export default function DashboardPage() {
 
     const newState = !currentState
 
+    if (newState) {
+      setTodaysTasks((prevTasks) => prevTasks.filter((t) => t.id !== id))
+    }
+
     const { error } = await supabase
       .from("tasks")
       .update({
@@ -347,6 +353,8 @@ export default function DashboardPage() {
         console.log("[v0] Task completed - Profile XP:", profile.current_xp, "/", profile.xp_to_next_level)
       }
 
+      fetchTodaysTasks(user.id)
+    } else if (error) {
       fetchTodaysTasks(user.id)
     }
 

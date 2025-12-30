@@ -8,6 +8,7 @@ import { XPToast } from "@/components/xp-toast"
 import { LevelUpCelebration } from "@/components/level-up-celebration"
 import { useDataRefresh } from "@/contexts/data-refresh-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { playSound } from "@/lib/sound-effects"
 
 interface Task {
   id: string
@@ -98,12 +99,15 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
 
     const newState = !currentState
 
-    // Optimistic UI update
-    setTasks((prevTasks) => prevTasks.map((t) => (t.id === id ? { ...t, completed: newState } : t)))
+    if (newState) {
+      setTasks((prevTasks) => prevTasks.filter((t) => t.id !== id))
+      playSound("xpgain")
+    } else {
+      // If uncompleting (shouldn't happen often), just toggle
+      setTasks((prevTasks) => prevTasks.map((t) => (t.id === id ? { ...t, completed: newState } : t)))
+    }
 
     try {
-      console.log("[v0] Updating task completion:", id, "to", newState)
-
       const { error: taskError } = await supabase
         .from("tasks")
         .update({
@@ -123,27 +127,21 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
           .maybeSingle()
 
         if (profile) {
-          console.log("[v0] Profile after task completion:", profile)
-
           setXpToastData({
             xp: 3,
             message: "Task completed!",
           })
           setShowXPToast(true)
           setTimeout(() => setShowXPToast(false), 3000)
-
-          const xpProgress = (profile.current_xp / profile.xp_to_next_level) * 100
-          console.log("[v0] XP Progress:", xpProgress, "% -", profile.current_xp, "/", profile.xp_to_next_level)
         }
       }
 
-      // Refresh tasks from database
+      // Refresh tasks from database to sync
       await fetchTasks()
-      triggerRefresh() // Trigger global refresh after task completion
+      triggerRefresh()
     } catch (error) {
-      console.error("[v0] Error in task completion:", error)
-      // Revert optimistic update on error
-      setTasks((prevTasks) => prevTasks.map((t) => (t.id === id ? { ...t, completed: currentState } : t)))
+      console.error("Error in task completion:", error)
+      await fetchTasks()
     }
   }
 
@@ -336,7 +334,7 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
           })
           .eq("user_id", user.id)
 
-        console.log("[v0] Streak reset due to overdue tasks at midnight")
+        console.log("Streak reset due to overdue tasks at midnight")
       }
     }
   }
