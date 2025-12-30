@@ -376,13 +376,17 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
     if (!user) return
 
-    const xpEarned = Math.floor(sessionData.minutes * 5)
+    const taskCompletionXP = selectedTask !== "none" ? 3 : 0
+    const timerXP = Math.floor(sessionData.minutes * 5)
+    const xpEarned = timerXP + taskCompletionXP
     const auraEarned = Math.floor(sessionData.minutes / 5)
 
     console.log("[v0] Zen session completed:")
     console.log("[v0] Minutes:", sessionData.minutes)
+    console.log("[v0] Timer XP:", timerXP)
+    console.log("[v0] Task completion XP:", taskCompletionXP)
+    console.log("[v0] Total XP earned:", xpEarned)
     console.log("[v0] Aura calculation: Math.floor(" + sessionData.minutes + " / 5) =", auraEarned)
-    console.log("[v0] XP earned:", xpEarned)
 
     const { data: currentProfile } = await supabase
       .from("profiles")
@@ -471,6 +475,17 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
       if (selectedTask !== "none") {
         await supabase.from("tasks").update({ completed: true }).eq("id", selectedTask)
+      }
+
+      if (selectedTask !== "none") {
+        await supabase
+          .from("tasks")
+          .update({
+            completed: true,
+            completed_at: new Date().toISOString(),
+            status: "completed",
+          })
+          .eq("id", selectedTask)
       }
 
       if (selectedGoal !== "none") {

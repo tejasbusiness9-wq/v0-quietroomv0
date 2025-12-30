@@ -41,6 +41,27 @@ export default function TasksPage({ onNavigateToZen }: { onNavigateToZen?: (task
   useEffect(() => {
     fetchTasks()
     checkAndResetStreakForOverdueTasks()
+
+    const supabase = getSupabaseBrowserClient()
+    const channel = supabase
+      .channel("tasks-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "tasks",
+        },
+        (payload) => {
+          // Refetch tasks when any task is updated
+          fetchTasks()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [refreshTrigger])
 
   const fetchTasks = async () => {
