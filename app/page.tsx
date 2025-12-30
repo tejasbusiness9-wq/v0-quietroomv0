@@ -1,23 +1,8 @@
 "use client"
 
-import {
-  Zap,
-  Target,
-  Timer,
-  Trophy,
-  Gift,
-  MessageSquare,
-  Play,
-  CheckCircle2,
-  TrendingUp,
-  Star,
-  Crown,
-  Flame,
-  Shield,
-} from "lucide-react"
+import { Zap, Target, Timer, Trophy, Gift, Play, CheckCircle2, TrendingUp, Shield, Swords } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { Card } from "@/components/ui/card"
 import TerminalDemo from "@/components/terminal-demo"
 import { ZenModeDemo } from "@/components/zen-mode-demo"
 
@@ -27,8 +12,8 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <nav className="container mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
-            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
-              <Zap className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center">
+              <img src="/ui/new-logo.png" alt="Quiet Room" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
             </div>
             <span className="text-xl md:text-2xl font-bold text-foreground">Quiet Room</span>
           </div>
@@ -102,36 +87,25 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
-              <Zap className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2 md:mb-3 mx-auto" />
-              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
-                50M+
+          <section className="py-12 md:py-20 px-4">
+            <div className="max-w-5xl mx-auto">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
+                <div className="relative bg-background rounded-2xl p-2 border border-border/50">
+                  <video
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/landingpagedashboard-kPh30tYybsBF1ifGMYccU5prt93Qsf.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-auto rounded-xl"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
               </div>
-              <div className="text-xs md:text-sm text-muted-foreground">Total XP Earned</div>
             </div>
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
-              <Flame className="w-6 h-6 md:w-8 md:h-8 text-orange-500 mb-2 md:mb-3 mx-auto" />
-              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
-                125
-              </div>
-              <div className="text-xs md:text-sm text-muted-foreground">Avg Daily Streak</div>
-            </div>
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
-              <Crown className="w-6 h-6 md:w-8 md:h-8 text-yellow-500 mb-2 md:mb-3 mx-auto" />
-              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
-                10K+
-              </div>
-              <div className="text-xs md:text-sm text-muted-foreground">Active Players</div>
-            </div>
-            <div className="bg-card/50 backdrop-blur border border-border rounded-2xl p-4 md:p-6">
-              <Star className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2 md:mb-3 mx-auto" />
-              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-1 md:mb-2">
-                95%
-              </div>
-              <div className="text-xs md:text-sm text-muted-foreground">Goal Success Rate</div>
-            </div>
-          </div>
+          </section>
         </div>
       </section>
 
@@ -206,254 +180,79 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-12 md:py-20 px-4 md:px-6 bg-card/30">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-6">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">Game Mechanics</span>
+      {/* Leaderboard Section */}
+      <section className="py-24 px-4 md:px-8 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            {/* Text Content - Left */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-6">
+                <Trophy className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">GLOBAL COMPETITION</span>
+              </div>
+
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                CLIMB THE{" "}
+                <span className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-transparent bg-clip-text">
+                  LEADERBOARD
+                </span>
+              </h2>
+
+              <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
+                Compete with players worldwide and prove your productivity prowess. Rise through the ranks to earn
+                exclusive daily Aura rewards and unlock prestigious titles.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center flex-shrink-0">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">Daily Aura Rewards</h4>
+                    <p className="text-muted-foreground">
+                      Top 10 earn 100 Aura, ranks 11-50 get 50 Aura, and 51-100 receive 20 Aura daily.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center flex-shrink-0">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">XP-Based Rankings</h4>
+                    <p className="text-muted-foreground">
+                      Every task completed and zen session adds to your total XP score.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center flex-shrink-0">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">Exclusive Titles & Badges</h4>
+                    <p className="text-muted-foreground">Show off your achievements with special player titles.</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h2 className="text-5xl font-bold mb-4">Epic Features That Make Work Feel Like Play</h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Every feature is designed to keep you engaged, motivated, and progressing toward your goals.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-            {/* Zen Mode Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0 w-full md:w-auto">
-                  <Image
-                    src="/zen-meditation-timer-interface.jpg"
-                    alt="Zen Mode Timer"
-                    width={300}
-                    height={200}
-                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
-                  />
-                </div>
-                <div className="w-full">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
-                    <Timer className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Zen Mode</h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-                    Enter deep focus with beautiful backgrounds and ambient sounds. Earn 5 XP per minute and 1 Aura per
-                    5 minutes. Complete sessions to maximize rewards!
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Customizable timer (15-60 min)</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Beautiful animated backgrounds</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Ambient soundscapes</span>
-                    </li>
-                  </ul>
-                </div>
+            {/* Video Content - Right */}
+            <div className="relative">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 p-1">
+                <video
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/leaderboard-5aT1ov6tv3PHtlp3aE4PR8l8RqEaEo.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto rounded-xl"
+                />
               </div>
-            </Card>
-
-            {/* Quest System Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0 w-full md:w-auto">
-                  <Image
-                    src="/task-dashboard-with-quest-cards.jpg"
-                    alt="Quest System"
-                    width={300}
-                    height={200}
-                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
-                  />
-                </div>
-                <div className="w-full">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary to-purple-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
-                    <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Quest System</h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-                    Complete tasks to earn XP. Regular tasks give 3 XP, but link them to goals for bonus rewards and
-                    track your progress across multiple quests.
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Create unlimited tasks</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Link tasks to goals</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Track daily progress</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            {/* Vision & Goals Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0 w-full md:w-auto">
-                  <Image
-                    src="/goal-tracking-dashboard.jpg"
-                    alt="Vision & Goals"
-                    width={300}
-                    height={200}
-                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
-                  />
-                </div>
-                <div className="w-full">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
-                    <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Vision & Goals</h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-                    Create meaningful goals with our 5-step wizard. Add your vision wall for inspiration, set clear
-                    deadlines, and track progress with beautiful stats.
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Personal vision wall</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>5-step goal creation wizard</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Progress tracking & streaks</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            {/* Global Leaderboard Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0 w-full md:w-auto">
-                  <Image
-                    src="/leaderboard-rankings-interface.png"
-                    alt="Global Leaderboard"
-                    width={300}
-                    height={200}
-                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
-                  />
-                </div>
-                <div className="w-full">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
-                    <Trophy className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Global Leaderboard</h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-                    Compete with players worldwide. Climb the ranks to earn daily Aura rewards. Top 10 get 100 Aura,
-                    ranks 11-50 get 50 Aura, and 51-100 get 20 Aura daily!
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Ranked by total XP earned</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Daily Aura rewards</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Player titles & badges</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            {/* Rewards Store Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0 w-full md:w-auto">
-                  <Image
-                    src="/rewards-store-items.jpg"
-                    alt="Rewards Store"
-                    width={300}
-                    height={200}
-                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
-                  />
-                </div>
-                <div className="w-full">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
-                    <Gift className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Rewards Store</h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-                    Spend your hard-earned Aura on real rewards! Buy new backgrounds, ambient sounds, and even real-life
-                    permissions like gaming time or cheat meals.
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Unlock premium backgrounds</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>New ambient soundscapes</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Real-life permission rewards</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            {/* Q AI Companion Feature */}
-            <Card className="bg-card border border-border rounded-3xl p-4 md:p-8 hover:border-primary/50 transition-all overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0 w-full md:w-auto">
-                  <Image
-                    src="/ai-chat-interface.png"
-                    alt="Q AI Companion"
-                    width={300}
-                    height={200}
-                    className="rounded-2xl border border-border w-full md:w-[300px] object-cover"
-                  />
-                </div>
-                <div className="w-full">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
-                    <MessageSquare className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3">Q, Your AI Companion</h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
-                    Meet Q, your gamified AI assistant. Ask questions, get advice in gaming slang, and let Q create
-                    tasks and goals for you with agent capabilities.
-                  </p>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Gamified conversational AI</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>Auto-create tasks & goals</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-xs md:text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span>24/7 productivity coaching</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
@@ -533,79 +332,180 @@ export default function LandingPage() {
       {/* Rewards Section */}
       <section id="rewards" className="py-20 px-6 bg-card/30">
         <div className="container mx-auto max-w-5xl">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-6">
-              <Gift className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">Get Rewarded</span>
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
+              <div className="relative rounded-2xl overflow-hidden border-2 border-primary/20">
+                <video autoPlay loop muted playsInline className="w-full h-auto">
+                  <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/rewardvideo-5qW4QowLFEyvunDD3hMoV7JyZ2Rbrd.mp4" type="video/mp4" />
+                </video>
+              </div>
             </div>
-            <h2 className="text-5xl font-bold mb-4">The Grind Never Stops</h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Join thousands of players turning their daily grind into epic achievements
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <Zap className="w-8 h-8 text-white" />
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-6">
+                <Gift className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">REWARDS THAT MATTER</span>
               </div>
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                10K+
-              </div>
-              <div className="text-muted-foreground">Active Players</div>
+              <h3 className="text-4xl md:text-5xl font-bold mb-6">
+                Spend Your{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">
+                  Aura Wisely
+                </span>
+              </h3>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                Transform your hard-earned Aura into rewards that actually enhance your life. From immersive zen
+                environments to guilt-free real-world permissions—you've earned it.
+              </p>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Premium Zen Environments</div>
+                    <div className="text-sm text-muted-foreground">
+                      Unlock breathtaking backgrounds—from serene forests to cyberpunk cityscapes. Elevate your focus
+                      sessions with visuals that inspire peak performance.
+                    </div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Real-Life Permissions</div>
+                    <div className="text-sm text-muted-foreground">
+                      Trade Aura for guilt-free rewards. Take that coffee break, binge that show, or treat
+                      yourself—because you've crushed your goals and earned every moment.
+                    </div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Exclusive Cosmetics & Badges</div>
+                    <div className="text-sm text-muted-foreground">
+                      Stand out with legendary avatars, animated frames, and prestige badges that showcase your
+                      productivity mastery to the entire community.
+                    </div>
+                  </div>
+                </li>
+              </ul>
             </div>
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                1M+
-              </div>
-              <div className="text-muted-foreground">Tasks Completed</div>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <Timer className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500 mb-2">
-                500K+
-              </div>
-              <div className="text-muted-foreground">Hours Focused</div>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <Link
-              href="/auth/signup"
-              className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-2xl font-bold text-xl hover:shadow-2xl hover:shadow-primary/50 transition-all hover:scale-105"
-            >
-              <Play className="w-6 h-6" />
-              Start Your Journey Now
-            </Link>
-            <p className="text-sm text-muted-foreground mt-4">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="text-primary hover:underline font-semibold">
-                Login here
-              </Link>
-            </p>
           </div>
         </div>
       </section>
 
+      {/* STOP BEING NPC CTA Section */}
+      <section className="py-32 px-6 bg-gradient-to-b from-card/30 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.1),transparent_70%)]"></div>
+        <div className="container mx-auto max-w-4xl text-center relative z-10">
+          <h2 className="text-6xl md:text-8xl font-black mb-6 leading-tight">
+            <span className="text-foreground">STOP BEING</span>
+            <br />
+            <span className="text-muted-foreground/50 line-through">NPC.</span>
+          </h2>
+          <p className="text-xl md:text-2xl text-muted-foreground mb-12">
+            Become the Main Character of your focus story today.
+          </p>
+          <Link
+            href="/auth/signup"
+            className="group inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-primary via-purple-600 to-primary bg-[length:200%_100%] hover:bg-[position:100%_0] text-white text-lg font-bold rounded-full transition-all duration-500 shadow-lg shadow-primary/50 hover:shadow-xl hover:shadow-primary/70 hover:scale-105"
+          >
+            <span>ENTER QUIET ROOM</span>
+            <Swords className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+          </Link>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-border">
-        <div className="container mx-auto text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-primary-foreground" />
+      <footer className="border-t border-border bg-background/50 backdrop-blur-sm">
+        <div className="container mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-8">
+            {/* Brand Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <img src="/ui/new-logo.png" alt="Quiet Room" className="w-10 h-10 object-contain" />
+                </div>
+                <span className="text-xl font-bold text-foreground tracking-wider">QUIET ROOM</span>
+              </div>
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+                The world's first Gamified Productivity OS. Managed by Q. Powered by your ambition. Turn your work into
+                a tactical advantage.
+              </p>
+              <div className="flex items-center gap-4 pt-2">
+                <a
+                  href="https://x.com/quietroomos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="X (Twitter)"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://www.linkedin.com/company/quiet-room123"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v11.452zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://www.instagram.com/quietroomdojo/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Instagram"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.057 1.685-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                  </svg>
+                </a>
+              </div>
             </div>
-            <span className="text-2xl font-bold text-foreground">Quiet Room</span>
+
+            {/* Contact Section */}
+            <div className="space-y-4">
+              <h3 className="text-primary font-semibold text-sm tracking-wider">CONTACT</h3>
+              <div className="space-y-2">
+                <a
+                  href="mailto:quietroom2025@gmail.com"
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm block"
+                >
+                  quietroom2025@gmail.com
+                </a>
+              </div>
+            </div>
+
+            {/* Legal Section */}
+            <div className="space-y-4">
+              <h3 className="text-primary font-semibold text-sm tracking-wider">LEGAL</h3>
+              <div className="space-y-2">
+                <a
+                  href="/privacy"
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm block"
+                >
+                  PRIVACY POLICY
+                </a>
+              </div>
+            </div>
           </div>
-          <p className="text-muted-foreground mb-6">Turn your productivity into an epic adventure</p>
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span>Made with</span>
-            <Zap className="w-4 h-4 text-primary" />
-            <span>by Emergent</span>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-muted-foreground text-xs">© 2025 QUIET ROOM HQ. ALL RIGHTS RESERVED.</p>
+            <p className="text-muted-foreground text-xs">DESIGNED FOR PEAK PERFORMANCE.</p>
           </div>
         </div>
       </footer>

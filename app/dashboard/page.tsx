@@ -534,7 +534,7 @@ export default function DashboardPage() {
           <div className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
-                <img src="/ui/logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
+                <img src="/ui/new-logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
               </div>
               <h1 className="text-lg font-bold text-sidebar-foreground">
                 Quiet Room{" "}
@@ -609,7 +609,7 @@ export default function DashboardPage() {
               <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <img src="/ui/logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
+                    <img src="/ui/new-logo.png" alt="Quiet Room" className="w-8 h-8 object-contain" />
                   </div>
                   <div>
                     <h1 className="text-lg font-bold text-sidebar-foreground">Quiet Room</h1>
