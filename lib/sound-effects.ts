@@ -10,8 +10,23 @@ export const playSound = (soundFile: string, volume = 0.5) => {
   }
 }
 
+export const playSoundEffect = (soundName: string, volume = 0.5) => {
+  const soundMap: Record<string, string> = {
+    zentimeup: "/sounds/zentimeup.mp3",
+    xpgain: "/sounds/xpgain.mp3",
+    levelup: "/sounds/levelup.mp3",
+    entrytrim: "/sounds/entrytrim.mp3",
+  }
+
+  const soundFile = soundMap[soundName]
+  if (soundFile) {
+    playSound(soundFile, volume)
+  }
+}
+
 export const SoundEffects = {
   timerComplete: () => playSound("/sounds/zentimeup.mp3", 0.6),
   xpGain: () => playSound("/sounds/xpgain.mp3", 0.5),
   levelUp: () => playSound("/sounds/levelup.mp3", 0.7),
+  entry: () => playSound("/sounds/entrytrim.mp3", 0.6),
 }

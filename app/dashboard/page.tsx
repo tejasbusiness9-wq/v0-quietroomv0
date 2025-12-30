@@ -42,6 +42,7 @@ import { StatPolygon } from "@/components/stat-polygon"
 import { ActivityHeatmap } from "@/components/activity-heatmap"
 import { StreakDisplay } from "@/components/streak-display" // Import StreakDisplay component
 import { SoundEffects } from "@/lib/sound-effects" // Added sound effects import
+import { PhilosophyGate } from "@/components/philosophy-gate"
 
 type PageType =
   | "dashboard"
@@ -87,6 +88,8 @@ export default function DashboardPage() {
 
   const { refreshTrigger, triggerRefresh } = useDataRefresh() // Use refresh trigger to refetch data
 
+  const [showPhilosophyGate, setShowPhilosophyGate] = useState(false)
+
   useEffect(() => {
     const checkAuth = async () => {
       const {
@@ -98,10 +101,27 @@ export default function DashboardPage() {
       } else {
         setUser(user)
         setIsLoadingUser(false)
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("has_seen_philosophy_gate")
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        if (profile && !profile.has_seen_philosophy_gate) {
+          setShowPhilosophyGate(true)
+        }
       }
     }
     checkAuth()
   }, [router, supabase])
+
+  const handleClosePhilosophyGate = async () => {
+    if (user) {
+      await supabase.from("profiles").update({ has_seen_philosophy_gate: true }).eq("user_id", user.id)
+    }
+    setShowPhilosophyGate(false)
+  }
 
   const [tasks, setTasks] = useState<any[]>([])
   const [loadingTasks, setLoadingTasks] = useState(true)
@@ -539,6 +559,8 @@ export default function DashboardPage() {
   return (
     <div className="dark">
       <audio ref={audioRef} src="/images/menu.mp3" preload="auto" />
+
+      {showPhilosophyGate && <PhilosophyGate onClose={handleClosePhilosophyGate} />}
 
       <div className="flex h-screen bg-background text-foreground">
         <aside className="hidden md:flex w-56 bg-sidebar border-r border-sidebar-border flex-col">
