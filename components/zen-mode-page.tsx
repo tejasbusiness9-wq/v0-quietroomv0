@@ -85,7 +85,7 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map())
   const [soundVolumes, setSoundVolumes] = useState<Map<string, number>>(new Map())
   const { toast } = useToast()
-  const [selectedSound, setSelectedSound] = useState<string | null>(null)
+  const [selectedSound, setSelectedSound] = useState<string>("none")
   const portalRoot = document.getElementById("portal-root")
   const [isMounted, setIsMounted] = useState(false)
   const [mediaTab, setMediaTab] = useState<"static" | "animated" | "sounds">("animated")
@@ -105,13 +105,51 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false)
   const [showQuickStartModal, setShowQuickStartModal] = useState(true) // Added state for QuickStartModal
 
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+
+  const requestWakeLock = async () => {
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request("screen")
+        console.log("[v0] Screen Wake Lock active")
+      }
+    } catch (err: any) {
+      console.error(`[v0] Wake Lock error: ${err.name}, ${err.message}`)
+    }
+  }
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current !== null) {
+      wakeLockRef.current.release().then(() => {
+        wakeLockRef.current = null
+        console.log("[v0] Screen Wake Lock released")
+      })
+    }
+  }
+
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "visible" && isRunning && isFullscreen) {
+        await requestWakeLock()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      releaseWakeLock()
+    }
+  }, [isRunning, isFullscreen])
+
   const startTimer = async (minutes: number) => {
     setInitialMinutes(minutes)
     setTimeLeft(minutes * 60)
     setTimerStartTimestamp(Date.now())
     setIsRunning(true)
     setIsFullscreen(true)
-    setShowQuickStartModal(false) // Assuming this modal exists elsewhere
+    setShowQuickStartModal(false)
+
+    await requestWakeLock()
 
     const supabase = getSupabaseBrowserClient()
     const {
@@ -150,6 +188,9 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
     setIsRunning(false)
     setShowGiveUpConfirm(false)
     setSessionData(null)
+
+    releaseWakeLock()
+
     // Reset timer without any rewards
     toast({
       title: "Session Ended",
@@ -343,6 +384,8 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
 
     setIsRunning(false)
     setIsFullscreen(false)
+
+    releaseWakeLock()
 
     if (!sessionId) {
       return
@@ -706,6 +749,8 @@ export default function ZenModePage({ onNavigate, taskId, goalName, goalId, onNa
     setIsFullscreen(true)
     setIsRunning(true)
     setTimerStartTimestamp(Date.now()) // Set the start time for accurate calculation
+
+    await requestWakeLock()
 
     const { data: session, error } = await supabase
       .from("zen_sessions")
