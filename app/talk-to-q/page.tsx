@@ -599,16 +599,7 @@ export default function TalkToQPage() {
               className="min-h-[48px] max-h-[120px] resize-none"
               disabled={isLoading || isLimitReached}
             />
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              onClick={toggleListening}
-              className="shrink-0 h-12 w-12 bg-transparent"
-              disabled={isLoading || isLimitReached}
-            >
-              <Mic className={`w-5 h-5 ${isListening ? "text-red-500 animate-pulse" : ""}`} />
-            </Button>
+           
             <Button
               type="submit"
               size="icon"
