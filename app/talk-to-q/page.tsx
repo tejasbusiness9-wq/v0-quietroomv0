@@ -288,7 +288,7 @@ export default function TalkToQPage() {
       const [profileData, statsData, goalsData, tasksData, streakData] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("user_stats").select("*").eq("user_id", user.id).single(),
-        supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "in_progress").limit(5),
+        supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "active").limit(5),
         supabase.from("tasks").select("*").eq("user_id", user.id).eq("completed", false).limit(5),
         supabase.from("streaks").select("*").eq("user_id", user.id).single(),
       ])
