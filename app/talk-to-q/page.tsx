@@ -6,6 +6,13 @@ import { Send, Loader2, Menu, X, Calendar, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import ReactMarkdown from "react-markdown"
@@ -40,6 +47,10 @@ export default function TalkToQPage() {
 
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
+
+  const [messageCount, setMessageCount] = useState(0)
+  const [showLimitDialog, setShowLimitDialog] = useState(false)
+  const MESSAGE_LIMIT = 20
 
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
@@ -110,7 +121,6 @@ export default function TalkToQPage() {
       if (error) throw error
       setSessions(data || [])
 
-      // Set active session to today's session or most recent
       const today = new Date().toISOString().split("T")[0]
       const todaySession = data?.find((s) => s.created_at.split("T")[0] === today)
       if (todaySession) {
@@ -139,6 +149,12 @@ export default function TalkToQPage() {
       }))
 
       setMessages(loadedMessages)
+      const userMessageCount = loadedMessages.filter((m) => m.role === "user").length
+      setMessageCount(userMessageCount)
+
+      if (userMessageCount >= MESSAGE_LIMIT) {
+        setShowLimitDialog(true)
+      }
     } catch (error) {
       console.error("[v0] Error loading messages:", error)
     }
@@ -162,13 +178,11 @@ export default function TalkToQPage() {
   const getOrCreateTodaySession = async (userId: string): Promise<string> => {
     const today = new Date().toISOString().split("T")[0]
 
-    // Check if today's session exists
     const existingSession = sessions.find((s) => s.created_at.split("T")[0] === today)
     if (existingSession) {
       return existingSession.id
     }
 
-    // Create new session for today
     const sessionTitle = `Strategy ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
 
     const { data, error } = await supabase
@@ -195,7 +209,7 @@ export default function TalkToQPage() {
     setActiveSessionId(sessionId)
     await loadMessages(sessionId)
     setIsLoadingSession(false)
-    setIsSidebarOpen(false) // Close sidebar on mobile after selection
+    setIsSidebarOpen(false)
   }
 
   useEffect(() => {
@@ -232,7 +246,7 @@ export default function TalkToQPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!input.trim() || isLoading || !user) return
+    if (!input.trim() || isLoading || !user || messageCount >= MESSAGE_LIMIT) return
 
     let sessionId = activeSessionId
     if (!sessionId) {
@@ -250,6 +264,9 @@ export default function TalkToQPage() {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
+
+    const newCount = messageCount + 1
+    setMessageCount(newCount)
 
     await supabase.from("chat_messages").insert({
       session_id: sessionId,
@@ -365,6 +382,10 @@ export default function TalkToQPage() {
       })
 
       await supabase.from("chat_sessions").update({ updated_at: new Date().toISOString() }).eq("id", sessionId)
+
+      if (newCount >= MESSAGE_LIMIT) {
+        setShowLimitDialog(true)
+      }
     } catch (error) {
       console.error("[v0] Chat error:", error)
 
@@ -408,15 +429,35 @@ export default function TalkToQPage() {
   const userDisplayName = userProfile?.display_name || userProfile?.username || user?.email?.split("@")[0] || "You"
   const userInitial = userDisplayName[0]?.toUpperCase() || "U"
 
+  const isLimitReached = messageCount >= MESSAGE_LIMIT
+
   return (
     <div className="flex h-full relative">
+      <AlertDialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+        <AlertDialogContent className="max-w-md">
+          <button
+            onClick={() => setShowLimitDialog(false)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Session Complete</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              That was a great session! We've hit our daily flow limit. To keep interactions high-quality, let's take a
+              pause.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div
         className={`fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="h-full flex flex-col">
-          {/* Sidebar Header */}
           <div className="p-3 border-b border-border">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-primary">TACTICAL LOG</h2>
@@ -427,7 +468,6 @@ export default function TalkToQPage() {
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </div>
 
-          {/* Sessions List */}
           <ScrollArea className="flex-1 p-2">
             <div className="space-y-2">
               {sessions.map((session) => (
@@ -456,13 +496,17 @@ export default function TalkToQPage() {
 
       {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30" onClick={() => setIsSidebarOpen(false)} />}
 
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full">
         <div className="flex items-center gap-3 p-3 border-b border-border bg-background">
           <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
           <h1 className="text-base font-bold">Talk to Q</h1>
+          <div className="ml-auto flex items-center gap-2">
+            <span className={`text-sm font-medium ${isLimitReached ? "text-destructive" : "text-muted-foreground"}`}>
+              {messageCount}/{MESSAGE_LIMIT}
+            </span>
+          </div>
         </div>
 
         <div className="flex-1 overflow-hidden">
@@ -551,9 +595,9 @@ export default function TalkToQPage() {
                   handleSubmit(e)
                 }
               }}
-              placeholder="Type your message here..."
+              placeholder={isLimitReached ? "Daily limit reached. Come back tomorrow!" : "Type your message here..."}
               className="min-h-[48px] max-h-[120px] resize-none"
-              disabled={isLoading}
+              disabled={isLoading || isLimitReached}
             />
             <Button
               type="button"
@@ -561,15 +605,22 @@ export default function TalkToQPage() {
               variant="outline"
               onClick={toggleListening}
               className="shrink-0 h-12 w-12 bg-transparent"
-              disabled={isLoading}
+              disabled={isLoading || isLimitReached}
             >
               <Mic className={`w-5 h-5 ${isListening ? "text-red-500 animate-pulse" : ""}`} />
             </Button>
-            <Button type="submit" size="icon" className="shrink-0 h-12 w-12" disabled={isLoading || !input.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              className="shrink-0 h-12 w-12"
+              disabled={isLoading || !input.trim() || isLimitReached}
+            >
               <Send className="w-5 h-5" />
             </Button>
           </form>
-          <p className="text-xs text-muted-foreground text-center mt-2">Q can make mistakes, so double-check it</p>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            {isLimitReached ? "You've reached your daily message limit" : "Q can make mistakes, so double-check it"}
+          </p>
         </div>
       </div>
     </div>

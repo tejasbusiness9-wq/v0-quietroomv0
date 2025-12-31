@@ -810,262 +810,242 @@ export default function DashboardPage() {
         {showLevelUp && <LevelUpCelebration level={newLevel} />}
 
         {showGuideModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-card border border-border rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 md:p-6 border-b border-border">
-                <h2 className="text-2xl font-bold text-foreground">Quiet Room Guide</h2>
-                <button
-                  onClick={() => setShowGuideModal(false)}
-                  className="p-2 hover:bg-accent rounded-lg transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl shadow-primary/20 flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">How Quiet Room Works</h2>
+                <p className="text-sm text-muted-foreground mt-1">A system for focus, honesty, and earned freedom.</p>
               </div>
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                aria-label="Close guide"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-              {/* Tabs */}
-              <div className="flex gap-2 px-4 md:px-6 pt-4 border-b border-border overflow-x-auto">
-                {[
-                  { id: "overview", label: "Overview" },
-                  { id: "goals", label: "Goals" },
-                  { id: "tasks", label: "Tasks" },
-                  { id: "zen", label: "Zen Mode" },
-                  { id: "q-ai", label: "Q AI" },
-                  { id: "xp", label: "XP System" },
-                  { id: "aura", label: "Aura System" },
-                  { id: "leaderboard", label: "Leaderboard" },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setGuideActiveTab(tab.id)}
-                    className={`px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
-                      guideActiveTab === tab.id
-                        ? "text-primary border-b-2 border-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-muted/20 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/60 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-primary/80 [&::-webkit-scrollbar-thumb]:transition-colors">
+              {/* Section 1 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    1
+                  </span>
+                  What Quiet Room Is (and is not)
+                </h3>
+                <p className="text-foreground leading-relaxed">Quiet Room is not a to-do app.</p>
+                <ul className="space-y-2 text-muted-foreground ml-6">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>It doesn't reward activity.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>It rewards honest focus.</span>
+                  </li>
+                </ul>
+                <p className="text-muted-foreground italic">Checking boxes gives almost nothing</p>
+                <p className="text-foreground font-semibold">Time spent focused gives everything</p>
+                <p className="text-sm text-muted-foreground/80 pt-2">Read this once. Then act.</p>
+              </section>
 
-              {/* Content Area */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Video Placeholder */}
-                  <div className="bg-muted rounded-xl aspect-video flex items-center justify-center border border-border">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <HelpCircle className="w-8 h-8 text-primary" />
-                      </div>
-                      <p className="text-muted-foreground text-sm">
-                        Video tutorial placeholder
-                        <br />
-                        (20-30 seconds)
-                      </p>
-                    </div>
+              {/* Section 2 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    2
+                  </span>
+                  The Core Loop (this is the heart)
+                </h3>
+                <div className="bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
+                  <p className="text-foreground font-bold text-center">Focus → XP → Aura → Freedom</p>
+                </div>
+                <div className="space-y-2 ml-4">
+                  <div>
+                    <p className="text-foreground font-semibold">Focus builds XP</p>
+                    <p className="text-muted-foreground text-sm">XP grows only when you stay in Zen Mode.</p>
                   </div>
-
-                  {/* Info Content */}
-                  <div className="space-y-4">
-                    {guideActiveTab === "overview" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Welcome to Quiet Room</h3>
-                        <p className="text-muted-foreground">
-                          Quiet Room is a gamified productivity platform that helps you turn focus into XP. Complete
-                          tasks, maintain streaks, and level up your productivity journey.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Track your daily tasks and goals</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Zap className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Earn XP and level up by completing activities</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Compete on the leaderboard with other players</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "goals" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Goals System</h3>
-                        <p className="text-muted-foreground">
-                          Set weekly, monthly, or yearly goals to track your long-term progress. Each goal can have
-                          multiple milestones and rewards.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <Target className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Create goals with specific timelines</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Target className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Break goals into manageable milestones</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Target className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Track completion percentage and deadline</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "tasks" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Tasks Management</h3>
-                        <p className="text-muted-foreground">
-                          Daily tasks are your main way to earn XP. Complete tasks before their deadline to maintain
-                          your streak and earn rewards.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Tasks due today must be completed by 11:59 PM</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Overdue tasks reset your daily streak at midnight</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <CheckSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>View Active and Overdue tabs to manage priorities</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "zen" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Zen Mode</h3>
-                        <p className="text-muted-foreground">
-                          Enter fullscreen focus sessions to maximize productivity. Earn bonus XP for completing Zen
-                          Mode sessions without giving up.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <Timer className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Set custom focus durations</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Timer className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Distraction-free fullscreen mode</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Timer className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Earn bonus XP for completion</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "q-ai" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Q AI Assistant</h3>
-                        <p className="text-muted-foreground">
-                          Chat with Q, your personal productivity AI. Get advice on tasks, motivation, and strategies to
-                          overcome procrastination.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <MessageSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Ask for productivity tips and strategies</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <MessageSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Get personalized advice based on your progress</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <MessageSquare className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Use starter prompts for quick help</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "xp" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">XP System</h3>
-                        <p className="text-muted-foreground">
-                          Earn XP by completing tasks and activities. Level up to unlock rewards and compete on the
-                          leaderboard.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <Zap className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Complete tasks to earn XP</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Zap className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Level up to receive 50 Aura bonus</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Zap className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Track your weekly XP progress</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "aura" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Aura System</h3>
-                        <p className="text-muted-foreground">
-                          Aura is the premium currency you earn by leveling up. Spend Aura on rewards and power-ups in
-                          the Rewards shop.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <Gift className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Earn 50 Aura every time you level up</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Gift className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Purchase Wildcard Permissions and power-ups</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Gift className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Customize your experience with rewards</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
-
-                    {guideActiveTab === "leaderboard" && (
-                      <>
-                        <h3 className="text-xl font-bold text-foreground">Leaderboard</h3>
-                        <p className="text-muted-foreground">
-                          Compete with other players based on your total XP. Climb the ranks to unlock exclusive titles
-                          and recognition.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-start gap-2">
-                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
-                            <span>View top players by XP ranking</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Track your position and progress</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <Trophy className="w-4 h-4 text-primary mt-0.5" />
-                            <span>Unlock titles as you level up</span>
-                          </li>
-                        </ul>
-                      </>
-                    )}
+                  <div>
+                    <p className="text-foreground font-semibold">Consistency builds Aura</p>
+                    <p className="text-muted-foreground text-sm">Aura represents integrity, not effort.</p>
+                  </div>
+                  <div>
+                    <p className="text-foreground font-semibold">Aura buys freedom</p>
+                    <p className="text-muted-foreground text-sm">Rest, fun, indulgence — guilt-free.</p>
                   </div>
                 </div>
-              </div>
+                <p className="text-sm text-muted-foreground italic pt-2">
+                  If you understand this, you understand the system.
+                </p>
+              </section>
+
+              {/* Section 3 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    3
+                  </span>
+                  Tasks: Anchors, not rewards
+                </h3>
+                <p className="text-muted-foreground">Tasks exist to direct focus</p>
+                <p className="text-muted-foreground">Tasks give very little XP</p>
+                <p className="text-foreground">Real progress happens when a task leads to a focus session</p>
+                <div className="bg-muted/50 border border-border rounded-lg px-4 py-3 space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Example:</p>
+                  <p className="text-foreground text-sm">"Study DSA" → Start Zen → 25 minutes → XP + Goal progress</p>
+                </div>
+              </section>
+
+              {/* Section 4 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    4
+                  </span>
+                  Goals: Direction, not pressure
+                </h3>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Goals give meaning to effort</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Tasks can be linked to goals</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Focus sessions move goal progress forward</span>
+                  </li>
+                </ul>
+                <p className="text-sm text-foreground italic">Progress is measured in time invested, not perfection.</p>
+              </section>
+
+              {/* Section 5 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    5
+                  </span>
+                  Zen Mode: Where growth happens
+                </h3>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>XP is earned per minute in Zen Mode</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Full XP only if you complete the session</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Giving up still earns partial XP</span>
+                  </li>
+                </ul>
+                <div className="pl-4 border-l-2 border-primary/50 space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Why?</p>
+                  <p className="text-foreground text-sm">Effort matters.</p>
+                  <p className="text-foreground text-sm font-semibold">Commitment matters more.</p>
+                </div>
+              </section>
+
+              {/* Section 6 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    6
+                  </span>
+                  Honesty & Failure
+                </h3>
+                <p className="text-muted-foreground">At the end of a session, Quiet Room asks only one thing:</p>
+                <p className="text-foreground font-semibold text-center italic">Did you show up honestly?</p>
+                <ul className="space-y-2 text-muted-foreground text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>No one is watching you</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>There is no punishment</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Reflection matters more than streaks</span>
+                  </li>
+                </ul>
+                <p className="text-foreground text-sm">Failure is logged, not judged.</p>
+              </section>
+
+              {/* Section 7 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    7
+                  </span>
+                  Aura & Rewards
+                </h3>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Aura is earned slowly</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Aura is spent intentionally</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Aura buys permission — not cosmetics</span>
+                  </li>
+                </ul>
+                <p className="text-foreground text-sm italic pt-2">You don't grind Aura.</p>
+                <p className="text-foreground text-sm font-semibold">You deserve it.</p>
+              </section>
+
+              {/* Section 8 */}
+              <section className="space-y-3">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold text-sm border border-primary/40">
+                    8
+                  </span>
+                  Leaderboards (optional motivation)
+                </h3>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Rankings are based on XP</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>XP comes from focus, not spam</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Daily Aura rewards are based on rank</span>
+                  </li>
+                </ul>
+                <p className="text-sm text-muted-foreground italic">Compete only if it helps you.</p>
+                <p className="text-sm text-foreground">Quiet Room works without competition.</p>
+              </section>
+
+              {/* Closing */}
+              <section className="pt-4 pb-2 border-t border-border">
+                <p className="text-foreground font-semibold text-center text-lg">
+                  You don't need to master Quiet Room.
+                </p>
+                <p className="text-primary text-center text-xl font-bold mt-2">Just start one focus session.</p>
+              </section>
             </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
       {selectedTask && (
         <div
